@@ -15,6 +15,8 @@ export interface TicketProps {
   status: TicketStatus;
   voidedAt: Date | null;
   voidedReason: string | null;
+  drawAt: Date;
+  cutoffMinutes: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,6 +28,8 @@ export interface CreateTicketInput {
   sellerId: string;
   client: string | null;
   lines: TicketLine[];
+  drawAt: Date;
+  cutoffMinutes: number;
 }
 
 export class Ticket extends AggregateRoot<TicketProps> {
@@ -48,6 +52,8 @@ export class Ticket extends AggregateRoot<TicketProps> {
       status: TicketStatus.VALID,
       voidedAt: null,
       voidedReason: null,
+      drawAt: input.drawAt,
+      cutoffMinutes: input.cutoffMinutes,
       createdAt: now,
       updatedAt: now,
     });
@@ -93,6 +99,14 @@ export class Ticket extends AggregateRoot<TicketProps> {
     return this.props.voidedReason;
   }
 
+  get drawAt(): Date {
+    return this.props.drawAt;
+  }
+
+  get cutoffMinutes(): number {
+    return this.props.cutoffMinutes;
+  }
+
   get createdAt(): Date {
     return this.props.createdAt;
   }
@@ -123,6 +137,10 @@ export class Ticket extends AggregateRoot<TicketProps> {
 
   minutesSinceCreation(now: Date): number {
     return (now.getTime() - this.props.createdAt.getTime()) / 60_000;
+  }
+
+  minutesUntilDraw(now: Date): number {
+    return (this.props.drawAt.getTime() - now.getTime()) / 60_000;
   }
 
   void(reason: string): void {

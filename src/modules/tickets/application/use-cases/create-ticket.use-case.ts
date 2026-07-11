@@ -9,6 +9,7 @@ import {
   GAMES_REPOSITORY,
   type GamesRepository,
 } from '../../../games/domain/repositories/games.repository';
+import { ResolveNextDraw } from '../../../games/application/use-cases/resolve-next-draw.use-case';
 import {
   SALE_POINTS_REPOSITORY,
   type SalePointsRepository,
@@ -34,6 +35,7 @@ export class CreateTicket implements UseCase<CreateTicketApplicationInput, Ticke
     @Inject(SALE_POINTS_REPOSITORY)
     private readonly salePoints: SalePointsRepository,
     @Inject(FOLIO_GENERATOR) private readonly folio: FolioGenerator,
+    private readonly resolveNextDraw: ResolveNextDraw,
   ) {}
 
   async execute(input: CreateTicketApplicationInput): Promise<TicketOutput> {
@@ -64,6 +66,11 @@ export class CreateTicket implements UseCase<CreateTicketApplicationInput, Ticke
         }),
     );
 
+    const { drawAt, cutoffMinutes } = await this.resolveNextDraw.execute({
+      gameId: input.gameId,
+      at: new Date(),
+    });
+
     const ticket = Ticket.create({
       folio: this.folio.generate(),
       gameId: input.gameId,
@@ -71,6 +78,8 @@ export class CreateTicket implements UseCase<CreateTicketApplicationInput, Ticke
       sellerId: input.sellerId,
       client: this.cleanClient(input.client),
       lines,
+      drawAt,
+      cutoffMinutes,
     });
 
     await this.tickets.save(ticket);

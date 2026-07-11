@@ -67,6 +67,13 @@ export class TicketOrmEntity {
   @Column({ type: 'integer', name: 'total_prize', default: 0 })
   totalPrize!: number;
 
+  @Index()
+  @Column({ type: 'timestamptz', name: 'draw_at' })
+  drawAt!: Date;
+
+  @Column({ type: 'integer', name: 'cutoff_minutes', default: 2 })
+  cutoffMinutes!: number;
+
   @OneToMany(() => TicketLineOrmEntity, (line) => line.ticket, {
     cascade: true,
     eager: true,

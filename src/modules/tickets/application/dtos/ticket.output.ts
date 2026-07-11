@@ -23,6 +23,8 @@ export interface TicketOutput {
   total: number;
   totalPrize: number;
   count: number;
+  drawAt: Date;
+  cutoffMinutes: number;
   lines: TicketLineOutput[];
   createdAt: Date;
   updatedAt: Date;
@@ -41,6 +43,8 @@ export const toTicketOutput = (ticket: Ticket): TicketOutput => ({
   total: ticket.total,
   totalPrize: ticket.totalPrize,
   count: ticket.count,
+  drawAt: ticket.drawAt,
+  cutoffMinutes: ticket.cutoffMinutes,
   lines: ticket.lines.map((line) => ({
     label: line.label,
     amount: line.amount,

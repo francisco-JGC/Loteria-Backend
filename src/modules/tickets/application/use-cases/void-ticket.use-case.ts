@@ -31,11 +31,19 @@ export class VoidTicket implements UseCase<VoidTicketInput, TicketOutput> {
     const ticket = await this.tickets.findById(input.id);
     if (!ticket) throw new NotFoundError('Ticket', input.id);
 
+    const now = new Date();
+    const minutesUntilDraw = ticket.minutesUntilDraw(now);
+    if (minutesUntilDraw <= ticket.cutoffMinutes) {
+      throw new ValidationError(
+        `Ticket cannot be voided within ${ticket.cutoffMinutes} minutes of the draw`,
+      );
+    }
+
     if (input.requesterRole === UserRole.SELLER) {
       if (!ticket.isOwnedBy(input.requesterId)) {
         throw new NotFoundError('Ticket', input.id);
       }
-      const elapsed = ticket.minutesSinceCreation(new Date());
+      const elapsed = ticket.minutesSinceCreation(now);
       if (elapsed > SELLER_VOID_WINDOW_MINUTES) {
         throw new ValidationError(
           `Sellers can only void tickets within ${SELLER_VOID_WINDOW_MINUTES} minutes`,
