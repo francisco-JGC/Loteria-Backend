@@ -12,4 +12,5 @@ export interface CreateTicketApplicationInput {
   sellerId: string;
   client: string | null;
   lines: CreateTicketLineInput[];
+  drawAt?: Date;
 }
