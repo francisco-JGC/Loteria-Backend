@@ -15,10 +15,15 @@ import { FindTicketByFolio } from '../../../application/use-cases/find-ticket-by
 import { FindTicketById } from '../../../application/use-cases/find-ticket-by-id.use-case';
 import { ListTickets } from '../../../application/use-cases/list-tickets.use-case';
 import type { ListTicketsOutput } from '../../../application/use-cases/list-tickets.use-case';
+import {
+  ListWinningTickets,
+  type WinningTicketOutput,
+} from '../../../application/use-cases/list-winning-tickets.use-case';
 import { VoidTicket } from '../../../application/use-cases/void-ticket.use-case';
 import type { TicketOutput } from '../../../application/dtos/ticket.output';
 import { CreateTicketHttpDto } from '../dtos/create-ticket-http.dto';
 import { ListTicketsQueryDto } from '../dtos/list-tickets-query.dto';
+import { ListWinnersQueryDto } from '../dtos/list-winners-query.dto';
 import { VoidTicketHttpDto } from '../dtos/void-ticket-http.dto';
 
 @Controller('tickets')
@@ -29,6 +34,7 @@ export class TicketsController {
     private readonly findTicketById: FindTicketById,
     private readonly findTicketByFolio: FindTicketByFolio,
     private readonly voidTicketUseCase: VoidTicket,
+    private readonly listWinningTickets: ListWinningTickets,
   ) {}
 
   @Post()
@@ -61,6 +67,22 @@ export class TicketsController {
       to: query.to ? new Date(query.to) : undefined,
       page: query.page,
       limit: query.limit,
+    });
+  }
+
+  @Get('winners')
+  listWinners(
+    @CurrentUser() user: RequestUser,
+    @Query() query: ListWinnersQueryDto,
+  ): Promise<WinningTicketOutput[]> {
+    return this.listWinningTickets.execute({
+      requesterId: user.id,
+      requesterRole: user.role,
+      salePointId: query.salePointId,
+      gameId: query.gameId,
+      sellerId: query.sellerId,
+      from: query.from ? new Date(query.from) : undefined,
+      to: query.to ? new Date(query.to) : undefined,
     });
   }
 
