@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { Game } from '../../../games/domain/entities/game.entity';
 import {
   DRAW_RESULTS_REPOSITORY,
   type DrawResultsRepository,
@@ -41,57 +40,23 @@ export class TicketEvaluator {
   ) {}
 
   async evaluate(ticket: Ticket): Promise<TicketEvaluation> {
-    const parentGame = await this.games.findById(ticket.gameId);
-    if (!parentGame) {
+    const game = await this.games.findById(ticket.gameId);
+    if (!game || game.type === GameType.MULTI_SORTEO) {
+      // Tickets are never created against MULTI_SORTEO games anymore.
+      // If we ever encounter one, treat it as pending.
       return this.pending(ticket);
     }
 
-    if (parentGame.type !== GameType.MULTI_SORTEO) {
-      const result = await this.results.findByGameAndDraw(
-        ticket.gameId,
-        ticket.drawAt,
-      );
-      if (!result) return this.pending(ticket);
-      const lines = ticket.lines.map((line) =>
-        this.evaluateLine(line, parentGame.type, result.winningNumber),
-      );
-      return this.assemble(ticket.id, lines);
-    }
-
-    // Multi Sorteo: each line has a subGame; look up its game + result.
-    const subGameNames = new Set<string>();
-    const subGameIds = new Set<string>();
-    for (const line of ticket.lines) {
-      if (line.subGameId) subGameIds.add(line.subGameId);
-      if (line.subGameName) subGameNames.add(line.subGameName.toLowerCase());
-    }
-
-    const catalog = await this.games.findAll({ onlyActive: false });
-    const gamesById = new Map(catalog.map((g) => [g.id, g] as const));
-    const gamesByName = new Map(
-      catalog.map((g) => [g.name.toLowerCase(), g] as const),
+    const result = await this.results.findByGameAndDraw(
+      ticket.gameId,
+      ticket.drawAt,
     );
+    if (!result) return this.pending(ticket);
 
-    const evaluations: TicketLineEvaluation[] = [];
-    for (const line of ticket.lines) {
-      const subGame = this.resolveSubGame(line, gamesById, gamesByName);
-      if (!subGame || subGame.type === GameType.MULTI_SORTEO) {
-        evaluations.push(this.missingSubGameLine(line));
-        continue;
-      }
-      const result = await this.results.findByGameAndDraw(
-        subGame.id,
-        ticket.drawAt,
-      );
-      if (!result) {
-        evaluations.push(this.missingSubGameLine(line));
-        continue;
-      }
-      evaluations.push(
-        this.evaluateLine(line, subGame.type, result.winningNumber),
-      );
-    }
-    return this.assemble(ticket.id, evaluations);
+    const lines = ticket.lines.map((line) =>
+      this.evaluateLine(line, game.type, result.winningNumber),
+    );
+    return this.assemble(ticket.id, lines);
   }
 
   private evaluateLine(
@@ -143,17 +108,7 @@ export class TicketEvaluator {
     return value.split('').sort().join('');
   }
 
-  private resolveSubGame(
-    line: TicketLine,
-    byId: Map<string, Game>,
-    byName: Map<string, Game>,
-  ): Game | undefined {
-    if (line.subGameId) return byId.get(line.subGameId);
-    if (line.subGameName) return byName.get(line.subGameName.toLowerCase());
-    return undefined;
-  }
-
-  private missingSubGameLine(line: TicketLine): TicketLineEvaluation {
+  private pendingLine(line: TicketLine): TicketLineEvaluation {
     return {
       label: line.label,
       amount: line.amount,
@@ -171,12 +126,11 @@ export class TicketEvaluator {
     lines: TicketLineEvaluation[],
   ): TicketEvaluation {
     const totalPrize = lines.reduce((sum, l) => sum + l.wonPrize, 0);
-    const hasPending = lines.some((l) => l.winningNumber === null);
     return {
       ticketId,
       totalPrize,
       isWinner: totalPrize > 0,
-      hasPendingDraw: hasPending && totalPrize === 0,
+      hasPendingDraw: false,
       lines,
     };
   }
@@ -187,7 +141,7 @@ export class TicketEvaluator {
       totalPrize: 0,
       isWinner: false,
       hasPendingDraw: true,
-      lines: ticket.lines.map((line) => this.missingSubGameLine(line)),
+      lines: ticket.lines.map((line) => this.pendingLine(line)),
     };
   }
 }

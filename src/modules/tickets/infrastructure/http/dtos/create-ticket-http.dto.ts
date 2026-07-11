@@ -3,6 +3,7 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
+  IsDateString,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -58,4 +59,8 @@ export class CreateTicketHttpDto {
   @ValidateNested({ each: true })
   @Type(() => CreateTicketLineHttpDto)
   lines!: CreateTicketLineHttpDto[];
+
+  @IsOptional()
+  @IsDateString()
+  drawAt?: string;
 }

@@ -55,6 +55,7 @@ export class TicketsController {
       sellerId: user.id,
       client: dto.client ?? null,
       lines: dto.lines,
+      drawAt: dto.drawAt ? new Date(dto.drawAt) : undefined,
     });
   }
 

@@ -6,6 +6,10 @@ import {
   ValidationError,
 } from '../../../../shared/domain/errors/domain.error';
 import {
+  DRAW_SCHEDULES_REPOSITORY,
+  type DrawSchedulesRepository,
+} from '../../../games/domain/repositories/draw-schedules.repository';
+import {
   GAMES_REPOSITORY,
   type GamesRepository,
 } from '../../../games/domain/repositories/games.repository';
@@ -34,6 +38,8 @@ export class CreateTicket implements UseCase<CreateTicketApplicationInput, Ticke
     @Inject(GAMES_REPOSITORY) private readonly games: GamesRepository,
     @Inject(SALE_POINTS_REPOSITORY)
     private readonly salePoints: SalePointsRepository,
+    @Inject(DRAW_SCHEDULES_REPOSITORY)
+    private readonly schedules: DrawSchedulesRepository,
     @Inject(FOLIO_GENERATOR) private readonly folio: FolioGenerator,
     private readonly resolveNextDraw: ResolveNextDraw,
   ) {}
@@ -66,10 +72,12 @@ export class CreateTicket implements UseCase<CreateTicketApplicationInput, Ticke
         }),
     );
 
-    const { drawAt, cutoffMinutes } = await this.resolveNextDraw.execute({
-      gameId: input.gameId,
-      at: new Date(),
-    });
+    const draw = input.drawAt
+      ? await this.validateExplicitDraw(input.gameId, input.drawAt)
+      : await this.resolveNextDraw.execute({
+          gameId: input.gameId,
+          at: new Date(),
+        });
 
     const ticket = Ticket.create({
       folio: this.folio.generate(),
@@ -78,12 +86,46 @@ export class CreateTicket implements UseCase<CreateTicketApplicationInput, Ticke
       sellerId: input.sellerId,
       client: this.cleanClient(input.client),
       lines,
-      drawAt,
-      cutoffMinutes,
+      drawAt: draw.drawAt,
+      cutoffMinutes: draw.cutoffMinutes,
     });
 
     await this.tickets.save(ticket);
     return toTicketOutput(ticket);
+  }
+
+  private async validateExplicitDraw(
+    gameId: string,
+    drawAt: Date,
+  ): Promise<{ drawAt: Date; cutoffMinutes: number }> {
+    const schedules = await this.schedules.findByGameId(gameId);
+    const active = schedules.filter((s) => s.isActive);
+    if (active.length === 0) {
+      throw new ValidationError('Game has no active draw schedules');
+    }
+
+    const dayOfWeek = drawAt.getDay();
+    const drawMinutes = drawAt.getHours() * 60 + drawAt.getMinutes();
+    const matching = active.find(
+      (s) => s.appliesTo(dayOfWeek) && s.toMinutes() === drawMinutes,
+    );
+    if (!matching) {
+      throw new ValidationError(
+        'Requested drawAt does not match any schedule for this game',
+      );
+    }
+
+    const now = new Date();
+    const cutoffAt = new Date(
+      drawAt.getTime() - matching.cutoffMinutes * 60_000,
+    );
+    if (now >= cutoffAt) {
+      throw new ValidationError(
+        `Cannot create ticket within ${matching.cutoffMinutes} minutes of the draw`,
+      );
+    }
+
+    return { drawAt, cutoffMinutes: matching.cutoffMinutes };
   }
 
   private cleanClient(value: string | null): string | null {
