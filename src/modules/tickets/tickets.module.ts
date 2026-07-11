@@ -1,0 +1,36 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
+import { GamesModule } from '../games/games.module';
+import { SalePointsModule } from '../sale-points/sale-points.module';
+import { FOLIO_GENERATOR } from './application/ports/folio-generator.port';
+import { CreateTicket } from './application/use-cases/create-ticket.use-case';
+import { FindTicketByFolio } from './application/use-cases/find-ticket-by-folio.use-case';
+import { FindTicketById } from './application/use-cases/find-ticket-by-id.use-case';
+import { ListTickets } from './application/use-cases/list-tickets.use-case';
+import { VoidTicket } from './application/use-cases/void-ticket.use-case';
+import { TICKETS_REPOSITORY } from './domain/repositories/tickets.repository';
+import { TicketsController } from './infrastructure/http/controllers/tickets.controller';
+import { TicketLineOrmEntity } from './infrastructure/persistence/entities/ticket-line.orm-entity';
+import { TicketOrmEntity } from './infrastructure/persistence/entities/ticket.orm-entity';
+import { TypeOrmTicketsRepository } from './infrastructure/persistence/repositories/typeorm-tickets.repository';
+import { TimestampFolioGenerator } from './infrastructure/services/timestamp-folio-generator';
+
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([TicketOrmEntity, TicketLineOrmEntity]),
+    GamesModule,
+    SalePointsModule,
+  ],
+  controllers: [TicketsController],
+  providers: [
+    { provide: TICKETS_REPOSITORY, useClass: TypeOrmTicketsRepository },
+    { provide: FOLIO_GENERATOR, useClass: TimestampFolioGenerator },
+    CreateTicket,
+    ListTickets,
+    FindTicketById,
+    FindTicketByFolio,
+    VoidTicket,
+  ],
+})
+export class TicketsModule {}

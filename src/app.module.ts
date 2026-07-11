@@ -5,6 +5,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
 import { GamesModule } from './modules/games/games.module';
 import { SalePointsModule } from './modules/sale-points/sale-points.module';
+import { TicketsModule } from './modules/tickets/tickets.module';
 import { UsersModule } from './modules/users/users.module';
 import { envLoader, envSchema } from './shared/infrastructure/config/env.config';
 import { DomainExceptionFilter } from './shared/infrastructure/http/domain-exception.filter';
@@ -23,6 +24,7 @@ import { DatabaseModule } from './shared/infrastructure/persistence/database.mod
     AuthModule,
     SalePointsModule,
     GamesModule,
+    TicketsModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: DomainExceptionFilter }],
 })
