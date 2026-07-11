@@ -27,6 +27,7 @@ import {
   EvaluateTicketById,
   type EvaluateTicketByIdOutput,
 } from '../../../application/use-cases/evaluate-ticket-by-id.use-case';
+import { MarkTicketPaid } from '../../../application/use-cases/mark-ticket-paid.use-case';
 import { ListWinnersQueryDto } from '../dtos/list-winners-query.dto';
 import { VoidTicketHttpDto } from '../dtos/void-ticket-http.dto';
 
@@ -40,6 +41,7 @@ export class TicketsController {
     private readonly voidTicketUseCase: VoidTicket,
     private readonly listWinningTickets: ListWinningTickets,
     private readonly evaluateTicketById: EvaluateTicketById,
+    private readonly markTicketPaid: MarkTicketPaid,
   ) {}
 
   @Post()
@@ -120,6 +122,14 @@ export class TicketsController {
       requesterId: user.id,
       requesterRole: user.role,
     });
+  }
+
+  @Post(':id/pay')
+  pay(
+    @CurrentUser() user: RequestUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<TicketOutput> {
+    return this.markTicketPaid.execute({ id, requesterId: user.id });
   }
 
   @Post(':id/void')

@@ -33,6 +33,9 @@ export class TicketMapper {
       voidedReason: orm.voidedReason,
       drawAt: orm.drawAt,
       cutoffMinutes: orm.cutoffMinutes,
+      paidAt: orm.paidAt,
+      paidById: orm.paidById,
+      paidPrize: orm.paidPrize,
       createdAt: orm.createdAt,
       updatedAt: orm.updatedAt,
     });
@@ -53,6 +56,9 @@ export class TicketMapper {
     entity.totalPrize = ticket.totalPrize;
     entity.drawAt = ticket.drawAt;
     entity.cutoffMinutes = ticket.cutoffMinutes;
+    entity.paidAt = ticket.paidAt;
+    entity.paidById = ticket.paidById;
+    entity.paidPrize = ticket.paidPrize;
     entity.createdAt = ticket.createdAt;
     entity.updatedAt = ticket.updatedAt;
     entity.lines = ticket.lines.map((line) => {

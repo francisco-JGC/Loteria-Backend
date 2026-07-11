@@ -25,6 +25,9 @@ export interface TicketOutput {
   count: number;
   drawAt: Date;
   cutoffMinutes: number;
+  paidAt: Date | null;
+  paidById: string | null;
+  paidPrize: number;
   lines: TicketLineOutput[];
   createdAt: Date;
   updatedAt: Date;
@@ -45,6 +48,9 @@ export const toTicketOutput = (ticket: Ticket): TicketOutput => ({
   count: ticket.count,
   drawAt: ticket.drawAt,
   cutoffMinutes: ticket.cutoffMinutes,
+  paidAt: ticket.paidAt,
+  paidById: ticket.paidById,
+  paidPrize: ticket.paidPrize,
   lines: ticket.lines.map((line) => ({
     label: line.label,
     amount: line.amount,

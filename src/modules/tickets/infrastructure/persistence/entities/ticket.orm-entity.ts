@@ -74,6 +74,15 @@ export class TicketOrmEntity {
   @Column({ type: 'integer', name: 'cutoff_minutes', default: 2 })
   cutoffMinutes!: number;
 
+  @Column({ type: 'timestamptz', name: 'paid_at', nullable: true })
+  paidAt!: Date | null;
+
+  @Column({ type: 'uuid', name: 'paid_by_id', nullable: true })
+  paidById!: string | null;
+
+  @Column({ type: 'integer', name: 'paid_prize', default: 0 })
+  paidPrize!: number;
+
   @OneToMany(() => TicketLineOrmEntity, (line) => line.ticket, {
     cascade: true,
     eager: true,

@@ -11,6 +11,7 @@ import { FindTicketByFolio } from './application/use-cases/find-ticket-by-folio.
 import { FindTicketById } from './application/use-cases/find-ticket-by-id.use-case';
 import { ListTickets } from './application/use-cases/list-tickets.use-case';
 import { ListWinningTickets } from './application/use-cases/list-winning-tickets.use-case';
+import { MarkTicketPaid } from './application/use-cases/mark-ticket-paid.use-case';
 import { VoidTicket } from './application/use-cases/void-ticket.use-case';
 import { TICKETS_REPOSITORY } from './domain/repositories/tickets.repository';
 import { TicketsController } from './infrastructure/http/controllers/tickets.controller';
@@ -37,6 +38,7 @@ import { TimestampFolioGenerator } from './infrastructure/services/timestamp-fol
     TicketEvaluator,
     ListWinningTickets,
     EvaluateTicketById,
+    MarkTicketPaid,
   ],
 })
 export class TicketsModule {}

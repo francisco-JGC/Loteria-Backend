@@ -17,6 +17,9 @@ export interface TicketProps {
   voidedReason: string | null;
   drawAt: Date;
   cutoffMinutes: number;
+  paidAt: Date | null;
+  paidById: string | null;
+  paidPrize: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,6 +57,9 @@ export class Ticket extends AggregateRoot<TicketProps> {
       voidedReason: null,
       drawAt: input.drawAt,
       cutoffMinutes: input.cutoffMinutes,
+      paidAt: null,
+      paidById: null,
+      paidPrize: 0,
       createdAt: now,
       updatedAt: now,
     });
@@ -107,6 +113,22 @@ export class Ticket extends AggregateRoot<TicketProps> {
     return this.props.cutoffMinutes;
   }
 
+  get paidAt(): Date | null {
+    return this.props.paidAt;
+  }
+
+  get paidById(): string | null {
+    return this.props.paidById;
+  }
+
+  get paidPrize(): number {
+    return this.props.paidPrize;
+  }
+
+  get isPaid(): boolean {
+    return this.props.paidAt !== null;
+  }
+
   get createdAt(): Date {
     return this.props.createdAt;
   }
@@ -147,9 +169,28 @@ export class Ticket extends AggregateRoot<TicketProps> {
     if (this.props.status === TicketStatus.VOIDED) {
       throw new ValidationError('Ticket already voided');
     }
+    if (this.props.paidAt !== null) {
+      throw new ValidationError('Cannot void a paid ticket');
+    }
     this.props.status = TicketStatus.VOIDED;
     this.props.voidedAt = new Date();
     this.props.voidedReason = reason;
     this.props.updatedAt = this.props.voidedAt;
+  }
+
+  markAsPaid(prize: number, paidById: string): void {
+    if (this.props.status === TicketStatus.VOIDED) {
+      throw new ValidationError('Cannot pay a voided ticket');
+    }
+    if (this.props.paidAt !== null) {
+      throw new ValidationError('Ticket already paid');
+    }
+    if (prize <= 0) {
+      throw new ValidationError('Cannot pay a ticket with no prize');
+    }
+    this.props.paidAt = new Date();
+    this.props.paidById = paidById;
+    this.props.paidPrize = prize;
+    this.props.updatedAt = this.props.paidAt;
   }
 }
