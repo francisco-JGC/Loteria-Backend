@@ -32,9 +32,7 @@ export class UsersController {
 
   @Get(':id')
   @Roles(UserRole.ADMIN)
-  findOne(
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ): Promise<UserOutput> {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<UserOutput> {
     return this.findUserById.execute(id);
   }
 }

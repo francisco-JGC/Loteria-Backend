@@ -8,10 +8,7 @@ import {
 import { FindUserByUsername } from '../../../users/application/use-cases/find-user-by-username.use-case';
 import { type AuthOutput } from '../dtos/auth.output';
 import { type LoginInput } from '../dtos/login.input';
-import {
-  TOKEN_SERVICE,
-  type TokenService,
-} from '../ports/token-service.port';
+import { TOKEN_SERVICE, type TokenService } from '../ports/token-service.port';
 
 @Injectable()
 export class Login implements UseCase<LoginInput, AuthOutput> {
@@ -25,10 +22,7 @@ export class Login implements UseCase<LoginInput, AuthOutput> {
     const user = await this.findUserByUsername.execute(input.username);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    const passwordOk = await this.hasher.compare(
-      input.password,
-      user.hashedPassword,
-    );
+    const passwordOk = await this.hasher.compare(input.password, user.hashedPassword);
     if (!passwordOk) throw new UnauthorizedException('Invalid credentials');
 
     const accessToken = await this.tokens.sign({

@@ -17,9 +17,7 @@ export interface AppConfig {
 }
 
 export const envSchema = Joi.object({
-  NODE_ENV: Joi.string()
-    .valid('development', 'test', 'production')
-    .default('development'),
+  NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
   PORT: Joi.number().integer().default(3000),
   DB_HOST: Joi.string().required(),
   DB_PORT: Joi.number().integer().default(5432),

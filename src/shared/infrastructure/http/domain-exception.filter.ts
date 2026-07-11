@@ -9,11 +9,7 @@ import {
 import { HttpAdapterHost } from '@nestjs/core';
 import { Response } from 'express';
 
-import {
-  DomainError,
-  NotFoundError,
-  ValidationError,
-} from '../../domain/errors/domain.error';
+import { DomainError, NotFoundError, ValidationError } from '../../domain/errors/domain.error';
 
 @Catch()
 export class DomainExceptionFilter implements ExceptionFilter {

@@ -8,9 +8,7 @@ import {
 import { toSalePointOutput, type SalePointOutput } from '../dtos/sale-point.output';
 
 @Injectable()
-export class ListSalePointsByOwner
-  implements UseCase<string, SalePointOutput[]>
-{
+export class ListSalePointsByOwner implements UseCase<string, SalePointOutput[]> {
   constructor(
     @Inject(SALE_POINTS_REPOSITORY)
     private readonly salePoints: SalePointsRepository,

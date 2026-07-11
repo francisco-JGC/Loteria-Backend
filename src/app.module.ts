@@ -22,8 +22,6 @@ import { DatabaseModule } from './shared/infrastructure/persistence/database.mod
     AuthModule,
     SalePointsModule,
   ],
-  providers: [
-    { provide: APP_FILTER, useClass: DomainExceptionFilter },
-  ],
+  providers: [{ provide: APP_FILTER, useClass: DomainExceptionFilter }],
 })
 export class AppModule {}

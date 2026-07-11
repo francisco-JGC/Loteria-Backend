@@ -3,16 +3,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../shared/application/use-case';
 import { ValidationError } from '../../../../shared/domain/errors/domain.error';
 import { User } from '../../domain/entities/user.entity';
-import {
-  USERS_REPOSITORY,
-  type UsersRepository,
-} from '../../domain/repositories/users.repository';
+import { USERS_REPOSITORY, type UsersRepository } from '../../domain/repositories/users.repository';
 import { type CreateUserInput } from '../dtos/create-user.input';
 import { toUserOutput, type UserOutput } from '../dtos/user.output';
-import {
-  PASSWORD_HASHER,
-  type PasswordHasher,
-} from '../ports/password-hasher.port';
+import { PASSWORD_HASHER, type PasswordHasher } from '../ports/password-hasher.port';
 
 @Injectable()
 export class CreateUser implements UseCase<CreateUserInput, UserOutput> {

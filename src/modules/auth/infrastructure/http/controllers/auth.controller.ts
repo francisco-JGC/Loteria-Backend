@@ -2,9 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/commo
 
 import { AuthOutput } from '../../../application/dtos/auth.output';
 import { Login } from '../../../application/use-cases/login.use-case';
-import {
-  CurrentUser,
-} from '../decorators/current-user.decorator';
+import { CurrentUser } from '../decorators/current-user.decorator';
 import { Public } from '../decorators/public.decorator';
 import { LoginHttpDto } from '../dtos/login-http.dto';
 import { type RequestUser } from '../../strategies/jwt.strategy';

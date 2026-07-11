@@ -14,9 +14,7 @@ export interface ToggleSalePointInput {
 }
 
 @Injectable()
-export class ToggleSalePoint
-  implements UseCase<ToggleSalePointInput, SalePointOutput>
-{
+export class ToggleSalePoint implements UseCase<ToggleSalePointInput, SalePointOutput> {
   constructor(
     @Inject(SALE_POINTS_REPOSITORY)
     private readonly salePoints: SalePointsRepository,

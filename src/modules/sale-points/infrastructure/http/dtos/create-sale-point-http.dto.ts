@@ -1,11 +1,4 @@
-import {
-  IsNotEmpty,
-  IsString,
-  IsUUID,
-  MaxLength,
-  Matches,
-  MinLength,
-} from 'class-validator';
+import { IsNotEmpty, IsString, IsUUID, MaxLength, Matches, MinLength } from 'class-validator';
 
 export class CreateSalePointHttpDto {
   @IsString()

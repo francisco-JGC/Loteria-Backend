@@ -16,11 +16,7 @@ export class SalePoint extends AggregateRoot<SalePointProps> {
     super(id, props);
   }
 
-  static create(input: {
-    name: string;
-    code: string;
-    ownerId: string;
-  }): SalePoint {
+  static create(input: { name: string; code: string; ownerId: string }): SalePoint {
     const now = new Date();
     return new SalePoint(randomUUID(), {
       name: input.name,

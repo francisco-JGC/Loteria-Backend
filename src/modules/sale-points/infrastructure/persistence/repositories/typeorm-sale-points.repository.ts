@@ -30,7 +30,7 @@ export class TypeOrmSalePointsRepository implements SalePointsRepository {
 
   async findAll(): Promise<SalePoint[]> {
     const rows = await this.repo.find({ order: { createdAt: 'DESC' } });
-    return rows.map(SalePointMapper.toDomain);
+    return rows.map((row) => SalePointMapper.toDomain(row));
   }
 
   async findByOwner(ownerId: string): Promise<SalePoint[]> {
@@ -38,6 +38,6 @@ export class TypeOrmSalePointsRepository implements SalePointsRepository {
       where: { ownerId },
       order: { createdAt: 'DESC' },
     });
-    return rows.map(SalePointMapper.toDomain);
+    return rows.map((row) => SalePointMapper.toDomain(row));
   }
 }

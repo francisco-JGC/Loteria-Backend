@@ -1,10 +1,7 @@
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 
 import { UseCase } from '../../../../shared/application/use-case';
-import {
-  USERS_REPOSITORY,
-  type UsersRepository,
-} from '../../domain/repositories/users.repository';
+import { USERS_REPOSITORY, type UsersRepository } from '../../domain/repositories/users.repository';
 import { UserRole } from '../../domain/value-objects/user-role';
 import { type UserOutput } from '../dtos/user.output';
 import { CreateUser } from './create-user.use-case';
@@ -16,9 +13,7 @@ export interface BootstrapFirstAdminInput {
 }
 
 @Injectable()
-export class BootstrapFirstAdmin
-  implements UseCase<BootstrapFirstAdminInput, UserOutput>
-{
+export class BootstrapFirstAdmin implements UseCase<BootstrapFirstAdminInput, UserOutput> {
   constructor(
     @Inject(USERS_REPOSITORY) private readonly users: UsersRepository,
     private readonly createUser: CreateUser,

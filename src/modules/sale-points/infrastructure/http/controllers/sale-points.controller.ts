@@ -1,16 +1,6 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 
-import {
-  CurrentUser,
-} from '../../../../auth/infrastructure/http/decorators/current-user.decorator';
+import { CurrentUser } from '../../../../auth/infrastructure/http/decorators/current-user.decorator';
 import { Roles } from '../../../../auth/infrastructure/http/decorators/roles.decorator';
 import { type RequestUser } from '../../../../auth/infrastructure/strategies/jwt.strategy';
 import { UserRole } from '../../../../users/domain/value-objects/user-role';
