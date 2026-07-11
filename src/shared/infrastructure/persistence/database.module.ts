@@ -20,7 +20,7 @@ import type { AppConfig } from '../config/env.config';
           password: db.password,
           database: db.name,
           autoLoadEntities: true,
-          synchronize: nodeEnv !== 'production',
+          synchronize: false,
           logging: nodeEnv === 'development' ? ['error', 'warn'] : ['error'],
         };
       },

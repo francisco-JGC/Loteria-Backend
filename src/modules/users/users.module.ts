@@ -23,6 +23,6 @@ import { BcryptPasswordHasher } from './infrastructure/services/bcrypt-password-
     FindUserByUsername,
     BootstrapFirstAdmin,
   ],
-  exports: [FindUserByUsername, PASSWORD_HASHER],
+  exports: [FindUserByUsername, PASSWORD_HASHER, USERS_REPOSITORY],
 })
 export class UsersModule {}
