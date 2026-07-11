@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 
 import { AuthModule } from './modules/auth/auth.module';
+import { GamesModule } from './modules/games/games.module';
 import { SalePointsModule } from './modules/sale-points/sale-points.module';
 import { UsersModule } from './modules/users/users.module';
 import { envLoader, envSchema } from './shared/infrastructure/config/env.config';
@@ -21,6 +22,7 @@ import { DatabaseModule } from './shared/infrastructure/persistence/database.mod
     UsersModule,
     AuthModule,
     SalePointsModule,
+    GamesModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: DomainExceptionFilter }],
 })
