@@ -6,6 +6,7 @@ import { SalePointsModule } from '../sale-points/sale-points.module';
 import { FOLIO_GENERATOR } from './application/ports/folio-generator.port';
 import { TicketEvaluator } from './application/services/ticket-evaluator.service';
 import { CreateTicket } from './application/use-cases/create-ticket.use-case';
+import { EvaluateTicketById } from './application/use-cases/evaluate-ticket-by-id.use-case';
 import { FindTicketByFolio } from './application/use-cases/find-ticket-by-folio.use-case';
 import { FindTicketById } from './application/use-cases/find-ticket-by-id.use-case';
 import { ListTickets } from './application/use-cases/list-tickets.use-case';
@@ -35,6 +36,7 @@ import { TimestampFolioGenerator } from './infrastructure/services/timestamp-fol
     VoidTicket,
     TicketEvaluator,
     ListWinningTickets,
+    EvaluateTicketById,
   ],
 })
 export class TicketsModule {}
