@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   Param,
   ParseUUIDPipe,
@@ -10,9 +9,7 @@ import {
   Query,
 } from '@nestjs/common';
 
-import { CurrentUser } from '../../../../auth/infrastructure/http/decorators/current-user.decorator';
 import { Roles } from '../../../../auth/infrastructure/http/decorators/roles.decorator';
-import type { RequestUser } from '../../../../auth/infrastructure/strategies/jwt.strategy';
 import { UserRole } from '../../../../users/domain/value-objects/user-role';
 import type { GameOutput } from '../../../application/dtos/game.output';
 import { CreateGame } from '../../../application/use-cases/create-game.use-case';
@@ -50,14 +47,8 @@ export class GamesController {
   }
 
   @Get()
-  list(
-    @CurrentUser() user: RequestUser,
-    @Query() query: ListGamesQueryDto,
-  ): Promise<GameOutput[]> {
-    if (query.includeInactive && user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('Only admins can list inactive games');
-    }
-    return this.listGames.execute({ onlyActive: !query.includeInactive });
+  list(@Query() query: ListGamesQueryDto): Promise<GameOutput[]> {
+    return this.listGames.execute({ onlyActive: query.onlyActive });
   }
 
   @Get(':slug')
