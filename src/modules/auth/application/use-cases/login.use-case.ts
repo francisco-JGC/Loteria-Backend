@@ -1,4 +1,9 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 import { UseCase } from '../../../../shared/application/use-case';
 import {
@@ -20,14 +25,18 @@ export class Login implements UseCase<LoginInput, AuthOutput> {
 
   async execute(input: LoginInput): Promise<AuthOutput> {
     const user = await this.findUserByUsername.execute(input.username);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) throw new UnauthorizedException('Usuario o contraseña incorrectos');
 
     const passwordOk = await this.hasher.compare(input.password, user.hashedPassword);
-    if (!passwordOk) throw new UnauthorizedException('Invalid credentials');
+    if (!passwordOk) {
+      throw new UnauthorizedException('Usuario o contraseña incorrectos');
+    }
 
+    // 403 (vs 401) so the mobile can render a distinct "blocked" screen
+    // instead of the generic wrong-password banner.
     if (!user.isActive) {
-      throw new UnauthorizedException(
-        'Your access has been disabled. Contact an administrator.',
+      throw new ForbiddenException(
+        'Tu acceso a la app fue restringido. Contacta a un administrador.',
       );
     }
 
