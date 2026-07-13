@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { GamesModule } from '../games/games.module';
 import { SalePointsModule } from '../sale-points/sale-points.module';
+import { UsersModule } from '../users/users.module';
 import { FOLIO_GENERATOR } from './application/ports/folio-generator.port';
 import { TicketEvaluator } from './application/services/ticket-evaluator.service';
 import { CreateTicket } from './application/use-cases/create-ticket.use-case';
@@ -25,6 +26,7 @@ import { TimestampFolioGenerator } from './infrastructure/services/timestamp-fol
     TypeOrmModule.forFeature([TicketOrmEntity, TicketLineOrmEntity]),
     GamesModule,
     SalePointsModule,
+    UsersModule,
   ],
   controllers: [TicketsController],
   providers: [

@@ -7,7 +7,7 @@ import { UserRole } from '../../../../users/domain/value-objects/user-role';
 import { type SalePointOutput } from '../../../application/dtos/sale-point.output';
 import { CreateSalePoint } from '../../../application/use-cases/create-sale-point.use-case';
 import { ListAllSalePoints } from '../../../application/use-cases/list-all-sale-points.use-case';
-import { ListSalePointsByOwner } from '../../../application/use-cases/list-sale-points-by-owner.use-case';
+import { ListSalePointsForUser } from '../../../application/use-cases/list-sale-points-for-user.use-case';
 import { ToggleSalePoint } from '../../../application/use-cases/toggle-sale-point.use-case';
 import { CreateSalePointHttpDto } from '../dtos/create-sale-point-http.dto';
 import { ToggleSalePointHttpDto } from '../dtos/toggle-sale-point-http.dto';
@@ -17,7 +17,7 @@ export class SalePointsController {
   constructor(
     private readonly createSalePoint: CreateSalePoint,
     private readonly listAllSalePoints: ListAllSalePoints,
-    private readonly listSalePointsByOwner: ListSalePointsByOwner,
+    private readonly listSalePointsForUser: ListSalePointsForUser,
     private readonly toggleSalePoint: ToggleSalePoint,
   ) {}
 
@@ -35,7 +35,7 @@ export class SalePointsController {
 
   @Get('mine')
   findMine(@CurrentUser() user: RequestUser): Promise<SalePointOutput[]> {
-    return this.listSalePointsByOwner.execute(user.id);
+    return this.listSalePointsForUser.execute(user.id);
   }
 
   @Patch(':id/toggle')

@@ -19,6 +19,10 @@ import {
   SALE_POINTS_REPOSITORY,
   type SalePointsRepository,
 } from '../../../sale-points/domain/repositories/sale-points.repository';
+import {
+  USERS_REPOSITORY,
+  type UsersRepository,
+} from '../../../users/domain/repositories/users.repository';
 import { Ticket } from '../../domain/entities/ticket.entity';
 import {
   TICKETS_REPOSITORY,
@@ -39,6 +43,7 @@ export class CreateTicket implements UseCase<CreateTicketApplicationInput, Ticke
     @Inject(GAMES_REPOSITORY) private readonly games: GamesRepository,
     @Inject(SALE_POINTS_REPOSITORY)
     private readonly salePoints: SalePointsRepository,
+    @Inject(USERS_REPOSITORY) private readonly users: UsersRepository,
     @Inject(DRAW_SCHEDULES_REPOSITORY)
     private readonly schedules: DrawSchedulesRepository,
     @Inject(FOLIO_GENERATOR) private readonly folio: FolioGenerator,
@@ -57,8 +62,17 @@ export class CreateTicket implements UseCase<CreateTicketApplicationInput, Ticke
     if (!salePoint.isActive) {
       throw new ValidationError('Sale point is not active');
     }
-    if (salePoint.ownerId !== input.sellerId) {
-      throw new ValidationError('Sale point does not belong to seller');
+
+    // A sale point can host multiple sellers. The seller must be assigned
+    // to THIS puesto via `users.sale_point_id`. `sale_points.owner_id` is
+    // no longer authoritative for ticket creation.
+    const seller = await this.users.findById(input.sellerId);
+    if (!seller) throw new NotFoundError('User', input.sellerId);
+    if (!seller.isActive) {
+      throw new ValidationError('Seller access is disabled');
+    }
+    if (seller.salePointId !== input.salePointId) {
+      throw new ValidationError('Seller does not belong to this sale point');
     }
 
     const lines = input.lines.map(
