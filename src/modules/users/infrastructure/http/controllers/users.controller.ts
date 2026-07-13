@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -17,11 +18,13 @@ import {
   ListUsers,
   type ListUsersOutput,
 } from '../../../application/use-cases/list-users.use-case';
+import { UpdateUser } from '../../../application/use-cases/update-user.use-case';
 import { UserOutput } from '../../../application/dtos/user.output';
 import { UserRole } from '../../../domain/value-objects/user-role';
 import { BootstrapAdminHttpDto } from '../dtos/bootstrap-admin-http.dto';
 import { CreateUserHttpDto } from '../dtos/create-user-http.dto';
 import { ListUsersQueryDto } from '../dtos/list-users-query.dto';
+import { UpdateUserHttpDto } from '../dtos/update-user-http.dto';
 
 @Controller('users')
 export class UsersController {
@@ -29,6 +32,7 @@ export class UsersController {
     private readonly createUser: CreateUser,
     private readonly findUserById: FindUserById,
     private readonly listUsers: ListUsers,
+    private readonly updateUser: UpdateUser,
     private readonly bootstrapFirstAdmin: BootstrapFirstAdmin,
   ) {}
 
@@ -59,5 +63,14 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<UserOutput> {
     return this.findUserById.execute(id);
+  }
+
+  @Patch(':id')
+  @Roles(UserRole.ADMIN)
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateUserHttpDto,
+  ): Promise<UserOutput> {
+    return this.updateUser.execute({ id, ...dto });
   }
 }

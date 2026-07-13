@@ -7,6 +7,7 @@ import { CreateUser } from './application/use-cases/create-user.use-case';
 import { FindUserById } from './application/use-cases/find-user-by-id.use-case';
 import { FindUserByUsername } from './application/use-cases/find-user-by-username.use-case';
 import { ListUsers } from './application/use-cases/list-users.use-case';
+import { UpdateUser } from './application/use-cases/update-user.use-case';
 import { USERS_REPOSITORY } from './domain/repositories/users.repository';
 import { UsersController } from './infrastructure/http/controllers/users.controller';
 import { UserOrmEntity } from './infrastructure/persistence/entities/user.orm-entity';
@@ -23,6 +24,7 @@ import { BcryptPasswordHasher } from './infrastructure/services/bcrypt-password-
     FindUserById,
     FindUserByUsername,
     ListUsers,
+    UpdateUser,
     BootstrapFirstAdmin,
   ],
   exports: [FindUserByUsername, PASSWORD_HASHER, USERS_REPOSITORY],

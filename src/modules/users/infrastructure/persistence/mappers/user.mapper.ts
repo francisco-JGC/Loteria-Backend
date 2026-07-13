@@ -8,6 +8,7 @@ export class UserMapper {
       hashedPassword: orm.hashedPassword,
       name: orm.name,
       role: orm.role,
+      isActive: orm.isActive,
       address: orm.address ?? null,
       nationalId: orm.nationalId ?? null,
       paymentPercentage: orm.paymentPercentage ?? null,
@@ -24,6 +25,7 @@ export class UserMapper {
     entity.hashedPassword = user.hashedPassword;
     entity.name = user.name;
     entity.role = user.role;
+    entity.isActive = user.isActive;
     entity.address = user.address;
     entity.nationalId = user.nationalId;
     entity.paymentPercentage = user.paymentPercentage;

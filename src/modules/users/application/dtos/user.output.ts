@@ -6,6 +6,7 @@ export interface UserOutput {
   username: string;
   name: string;
   role: UserRole;
+  isActive: boolean;
   address: string | null;
   nationalId: string | null;
   paymentPercentage: number | null;
@@ -19,6 +20,7 @@ export const toUserOutput = (user: User): UserOutput => ({
   username: user.username,
   name: user.name,
   role: user.role,
+  isActive: user.isActive,
   address: user.address,
   nationalId: user.nationalId,
   paymentPercentage: user.paymentPercentage,

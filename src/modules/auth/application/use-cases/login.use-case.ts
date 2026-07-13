@@ -25,6 +25,12 @@ export class Login implements UseCase<LoginInput, AuthOutput> {
     const passwordOk = await this.hasher.compare(input.password, user.hashedPassword);
     if (!passwordOk) throw new UnauthorizedException('Invalid credentials');
 
+    if (!user.isActive) {
+      throw new UnauthorizedException(
+        'Your access has been disabled. Contact an administrator.',
+      );
+    }
+
     const accessToken = await this.tokens.sign({
       sub: user.id,
       username: user.username,

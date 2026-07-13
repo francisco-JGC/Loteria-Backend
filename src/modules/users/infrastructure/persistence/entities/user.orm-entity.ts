@@ -30,6 +30,9 @@ export class UserOrmEntity {
   @Column({ type: 'varchar', length: 20 })
   role!: UserRole;
 
+  @Column({ type: 'boolean', name: 'is_active', default: true })
+  isActive!: boolean;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   address!: string | null;
 

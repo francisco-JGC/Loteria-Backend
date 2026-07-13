@@ -8,6 +8,7 @@ export interface UserProps {
   hashedPassword: string;
   name: string;
   role: UserRole;
+  isActive: boolean;
   address: string | null;
   nationalId: string | null;
   paymentPercentage: number | null;
@@ -37,6 +38,7 @@ export class User extends AggregateRoot<UserProps> {
       hashedPassword: input.hashedPassword,
       name: input.name,
       role: input.role,
+      isActive: true,
       address: input.address ?? null,
       nationalId: input.nationalId ?? null,
       paymentPercentage: input.paymentPercentage ?? null,
@@ -44,6 +46,31 @@ export class User extends AggregateRoot<UserProps> {
       createdAt: now,
       updatedAt: now,
     });
+  }
+
+  update(patch: {
+    name?: string;
+    role?: UserRole;
+    isActive?: boolean;
+    address?: string | null;
+    nationalId?: string | null;
+    paymentPercentage?: number | null;
+    salePointId?: string | null;
+    hashedPassword?: string;
+  }): void {
+    if (patch.name !== undefined) this.props.name = patch.name;
+    if (patch.role !== undefined) this.props.role = patch.role;
+    if (patch.isActive !== undefined) this.props.isActive = patch.isActive;
+    if (patch.address !== undefined) this.props.address = patch.address;
+    if (patch.nationalId !== undefined)
+      this.props.nationalId = patch.nationalId;
+    if (patch.paymentPercentage !== undefined)
+      this.props.paymentPercentage = patch.paymentPercentage;
+    if (patch.salePointId !== undefined)
+      this.props.salePointId = patch.salePointId;
+    if (patch.hashedPassword !== undefined)
+      this.props.hashedPassword = patch.hashedPassword;
+    this.props.updatedAt = new Date();
   }
 
   static restore(id: string, props: UserProps): User {
@@ -64,6 +91,10 @@ export class User extends AggregateRoot<UserProps> {
 
   get hashedPassword(): string {
     return this.props.hashedPassword;
+  }
+
+  get isActive(): boolean {
+    return this.props.isActive;
   }
 
   get address(): string | null {
