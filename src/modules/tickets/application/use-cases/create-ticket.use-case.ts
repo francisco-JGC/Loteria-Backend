@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import type { UseCase } from '../../../../shared/application/use-case';
+import { toBusinessWallClock } from '../../../../shared/domain/business-time';
 import {
   NotFoundError,
   ValidationError,
@@ -104,8 +105,11 @@ export class CreateTicket implements UseCase<CreateTicketApplicationInput, Ticke
       throw new ValidationError('Game has no active draw schedules');
     }
 
-    const dayOfWeek = drawAt.getDay();
-    const drawMinutes = drawAt.getHours() * 60 + drawAt.getMinutes();
+    // Extract wall-clock in BUSINESS_TZ so schedule matching works
+    // regardless of the server's process timezone.
+    const wall = toBusinessWallClock(drawAt);
+    const dayOfWeek = wall.dayOfWeek;
+    const drawMinutes = wall.hour * 60 + wall.minute;
     const matching = active.find(
       (s) => s.appliesTo(dayOfWeek) && s.toMinutes() === drawMinutes,
     );

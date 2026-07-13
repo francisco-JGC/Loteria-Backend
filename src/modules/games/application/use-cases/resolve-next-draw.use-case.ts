@@ -1,6 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import type { UseCase } from '../../../../shared/application/use-case';
+import {
+  fromBusinessWallClock,
+  toBusinessWallClock,
+} from '../../../../shared/domain/business-time';
 import { NotFoundError, ValidationError } from '../../../../shared/domain/errors/domain.error';
 import type { DrawSchedule } from '../../domain/entities/draw-schedule.entity';
 import {
@@ -46,25 +50,39 @@ export class ResolveNextDraw
       );
     }
 
-    const nowMinutes = input.at.getHours() * 60 + input.at.getMinutes();
+    // Anchor everything to the BUSINESS_TZ wall clock so the DOW / cutoff /
+    // draw instant we return are consistent regardless of process timezone.
+    const nowWall = toBusinessWallClock(input.at);
+    const nowMinutes = nowWall.hour * 60 + nowWall.minute;
 
     for (let offset = 0; offset <= LOOK_AHEAD_DAYS; offset++) {
-      const day = new Date(input.at);
-      day.setDate(day.getDate() + offset);
-      const dayOfWeek = day.getDay();
-      const candidates = this.candidatesFor(active, dayOfWeek);
+      // Land at noon-ish so we can safely observe the target date's DOW in
+      // BUSINESS_TZ without any DST edge cases at midnight.
+      const anchor = fromBusinessWallClock(
+        nowWall.year,
+        nowWall.month,
+        nowWall.day + offset,
+        12,
+        0,
+      );
+      const dayWall = toBusinessWallClock(anchor);
+      const candidates = this.candidatesFor(active, dayWall.dayOfWeek);
       if (candidates.length === 0) continue;
 
       for (const schedule of candidates) {
         const drawMinutes = schedule.toMinutes();
         const cutoffThreshold = drawMinutes - schedule.cutoffMinutes;
-        const passesCutoff =
-          offset > 0 || nowMinutes < cutoffThreshold;
+        const passesCutoff = offset > 0 || nowMinutes < cutoffThreshold;
         if (!passesCutoff) continue;
 
-        const drawAt = new Date(day);
         const [h, m] = schedule.drawTime.split(':').map(Number);
-        drawAt.setHours(h, m, 0, 0);
+        const drawAt = fromBusinessWallClock(
+          dayWall.year,
+          dayWall.month,
+          dayWall.day,
+          h,
+          m,
+        );
         return { drawAt, cutoffMinutes: schedule.cutoffMinutes };
       }
     }

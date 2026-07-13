@@ -3,6 +3,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 import type { UseCase } from '../../../../shared/application/use-case';
+import { BUSINESS_TZ } from '../../../../shared/domain/business-time';
 import { UserRole } from '../../../users/domain/value-objects/user-role';
 import { ListWinningTickets } from '../../../tickets/application/use-cases/list-winning-tickets.use-case';
 import type {
@@ -20,14 +21,6 @@ const MONTH_LABELS = [
 ] as const;
 
 const POST_DRAW_GRACE_MINUTES = 3;
-
-/**
- * Wall-clock timezone the operators live in. `draw_schedules.draw_time`
- * is a plain "HH:MM" string interpreted in this zone (matching what the
- * mobile app does when building schedule DateTimes). The DB may be in any
- * timezone, so we anchor explicitly.
- */
-const BUSINESS_TZ = 'America/Managua';
 
 /**
  * Aggregates the numbers powering the home dashboard.
@@ -100,44 +93,51 @@ export class GetDashboardSummary
         total_users: string;
       }>
     >(
+      // All "today" / "yesterday" boundaries are computed in BUSINESS_TZ so
+      // the dashboard aligns with schedule cutoffs (which are also wall-clock
+      // in that zone).
       `
       SELECT
         COALESCE(SUM(CASE
-          WHEN t.status = 'valid' AND t.created_at::date = CURRENT_DATE
+          WHEN t.status = 'valid'
+           AND (t.created_at AT TIME ZONE $1)::date = (now() AT TIME ZONE $1)::date
           THEN t.total ELSE 0 END), 0)::bigint AS billed_today,
         COALESCE(SUM(CASE
-          WHEN t.paid_at IS NOT NULL AND t.paid_at::date = CURRENT_DATE
+          WHEN t.paid_at IS NOT NULL
+           AND (t.paid_at AT TIME ZONE $1)::date = (now() AT TIME ZONE $1)::date
           THEN t.paid_prize ELSE 0 END), 0)::bigint AS paid_today,
         COALESCE(SUM(CASE
-          WHEN t.status = 'valid' AND t.created_at::date = CURRENT_DATE
+          WHEN t.status = 'valid'
+           AND (t.created_at AT TIME ZONE $1)::date = (now() AT TIME ZONE $1)::date
           THEN 1 ELSE 0 END), 0)::bigint AS tickets_today,
 
         COALESCE(SUM(CASE
           WHEN t.status = 'valid'
-           AND t.created_at::date = CURRENT_DATE - INTERVAL '1 day'
+           AND (t.created_at AT TIME ZONE $1)::date = (now() AT TIME ZONE $1)::date - 1
           THEN t.total ELSE 0 END), 0)::bigint AS billed_yesterday,
         COALESCE(SUM(CASE
           WHEN t.paid_at IS NOT NULL
-           AND t.paid_at::date = CURRENT_DATE - INTERVAL '1 day'
+           AND (t.paid_at AT TIME ZONE $1)::date = (now() AT TIME ZONE $1)::date - 1
           THEN t.paid_prize ELSE 0 END), 0)::bigint AS paid_yesterday,
         COALESCE(SUM(CASE
           WHEN t.status = 'valid'
-           AND t.created_at::date = CURRENT_DATE - INTERVAL '1 day'
+           AND (t.created_at AT TIME ZONE $1)::date = (now() AT TIME ZONE $1)::date - 1
           THEN 1 ELSE 0 END), 0)::bigint AS tickets_yesterday,
 
         COALESCE(SUM(CASE
           WHEN t.status = 'valid'
-           AND t.created_at >= (CURRENT_DATE - INTERVAL '6 days')
+           AND (t.created_at AT TIME ZONE $1)::date >= (now() AT TIME ZONE $1)::date - 6
           THEN t.total ELSE 0 END), 0)::bigint AS weekly_billed,
         COALESCE(SUM(CASE
           WHEN t.status = 'valid'
-           AND t.created_at >= (CURRENT_DATE - INTERVAL '13 days')
-           AND t.created_at <  (CURRENT_DATE - INTERVAL '6 days')
+           AND (t.created_at AT TIME ZONE $1)::date BETWEEN
+                 (now() AT TIME ZONE $1)::date - 13 AND (now() AT TIME ZONE $1)::date - 7
           THEN t.total ELSE 0 END), 0)::bigint AS weekly_billed_prev,
 
         (SELECT COUNT(*) FROM users)::bigint AS total_users
       FROM tickets t
       `,
+      [BUSINESS_TZ],
     );
     const row = rows[0];
     const billedToday = Number(row?.billed_today ?? 0);
@@ -172,27 +172,29 @@ export class GetDashboardSummary
     >(
       `
       WITH months AS (
-        SELECT date_trunc('month', now()) - (n || ' months')::interval AS month_start
-        FROM generate_series(0, $1 - 1) AS n
+        SELECT
+          (date_trunc('month', now() AT TIME ZONE $1)
+            - (n || ' months')::interval)::date AS month_start
+        FROM generate_series(0, $2 - 1) AS n
       )
       SELECT
         m.month_start,
         COALESCE(SUM(CASE
           WHEN t.status = 'valid'
-           AND t.created_at >= m.month_start
-           AND t.created_at < m.month_start + INTERVAL '1 month'
+           AND (t.created_at AT TIME ZONE $1)::date >= m.month_start
+           AND (t.created_at AT TIME ZONE $1)::date <  (m.month_start + INTERVAL '1 month')::date
           THEN t.total ELSE 0 END), 0)::bigint AS billed,
         COALESCE(SUM(CASE
           WHEN t.paid_at IS NOT NULL
-           AND t.paid_at >= m.month_start
-           AND t.paid_at < m.month_start + INTERVAL '1 month'
+           AND (t.paid_at AT TIME ZONE $1)::date >= m.month_start
+           AND (t.paid_at AT TIME ZONE $1)::date <  (m.month_start + INTERVAL '1 month')::date
           THEN t.paid_prize ELSE 0 END), 0)::bigint AS paid
       FROM months m
       LEFT JOIN tickets t ON true
       GROUP BY m.month_start
       ORDER BY m.month_start ASC
       `,
-      [MONTHS_IN_SERIES],
+      [BUSINESS_TZ, MONTHS_IN_SERIES],
     );
 
     return rows.map((r) => {
@@ -221,17 +223,18 @@ export class GetDashboardSummary
         g.name,
         COALESCE(SUM(CASE
           WHEN t.status = 'valid'
-           AND t.created_at >= (CURRENT_DATE - INTERVAL '6 days')
+           AND (t.created_at AT TIME ZONE $1)::date >= (now() AT TIME ZONE $1)::date - 6
           THEN t.total ELSE 0 END), 0)::bigint AS billed,
         COALESCE(SUM(CASE
           WHEN t.paid_at IS NOT NULL
-           AND t.paid_at >= (CURRENT_DATE - INTERVAL '6 days')
+           AND (t.paid_at AT TIME ZONE $1)::date >= (now() AT TIME ZONE $1)::date - 6
           THEN t.paid_prize ELSE 0 END), 0)::bigint AS paid
       FROM games g
       LEFT JOIN tickets t ON t.game_id = g.id
       GROUP BY g.id, g.name, g.order_index
       ORDER BY g.order_index ASC
       `,
+      [BUSINESS_TZ],
     );
     return rows.map((r) => ({
       gameId: r.id,
@@ -376,13 +379,14 @@ export class GetDashboardSummary
       LEFT JOIN tickets t
         ON t.seller_id = u.id
        AND t.status = 'valid'
-       AND t.created_at::date = CURRENT_DATE
+       AND (t.created_at AT TIME ZONE $1)::date = (now() AT TIME ZONE $1)::date
       WHERE u.role = 'seller'
       GROUP BY u.id, u.name
       HAVING COALESCE(SUM(t.total), 0) > 0
       ORDER BY amount DESC
       LIMIT 5
       `,
+      [BUSINESS_TZ],
     );
     return rows.map((r) => ({
       id: r.id,
@@ -406,12 +410,13 @@ export class GetDashboardSummary
       LEFT JOIN tickets t
         ON t.sale_point_id = sp.id
        AND t.status = 'valid'
-       AND t.created_at::date = CURRENT_DATE
+       AND (t.created_at AT TIME ZONE $1)::date = (now() AT TIME ZONE $1)::date
       GROUP BY sp.id, sp.name
       HAVING COALESCE(SUM(t.total), 0) > 0
       ORDER BY amount DESC
       LIMIT 5
       `,
+      [BUSINESS_TZ],
     );
     return rows.map((r) => ({
       id: r.id,
