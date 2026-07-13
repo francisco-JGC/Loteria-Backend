@@ -1,8 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 import type { UseCase } from '../../../../shared/application/use-case';
+import {
+  USERS_REPOSITORY,
+  type UsersRepository,
+} from '../../../users/domain/repositories/users.repository';
 import { UserRole } from '../../../users/domain/value-objects/user-role';
 import type { TicketsSummaryOutput } from '../dtos/tickets-summary.output';
 
@@ -20,7 +24,9 @@ export interface GetTicketsSummaryInput {
  * Server-side SQL aggregation for the movements screen: returns billed +
  * paid-prize totals + counts for a set of tickets, without transporting
  * hundreds of rows to the client. Sellers can only see their own totals;
- * admins can filter by any seller.
+ * admins can filter by any seller. When the query is scoped to a single
+ * seller, the commission (`salary`) is also computed here using that
+ * user's `paymentPercentage` so the client never has to know the rate.
  */
 @Injectable()
 export class GetTicketsSummary
@@ -28,6 +34,7 @@ export class GetTicketsSummary
 {
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
+    @Inject(USERS_REPOSITORY) private readonly users: UsersRepository,
   ) {}
 
   async execute(
@@ -73,12 +80,27 @@ export class GetTicketsSummary
     );
 
     const row = rows[0];
+    const billed = Number(row?.billed ?? 0);
+
+    // Commission only makes sense when we're looking at ONE seller's totals.
+    let salary: number | null = null;
+    let paymentPercentage: number | null = null;
+    if (effectiveSellerId) {
+      const seller = await this.users.findById(effectiveSellerId);
+      if (seller?.paymentPercentage !== null && seller?.paymentPercentage !== undefined) {
+        paymentPercentage = seller.paymentPercentage;
+        salary = Math.round((billed * paymentPercentage) / 100);
+      }
+    }
+
     return {
       ticketCount: Number(row?.ticket_count ?? 0),
       voidedCount: Number(row?.voided_count ?? 0),
       paidCount: Number(row?.paid_count ?? 0),
-      billed: Number(row?.billed ?? 0),
+      billed,
       paidPrize: Number(row?.paid_prize ?? 0),
+      salary,
+      paymentPercentage,
     };
   }
 }
