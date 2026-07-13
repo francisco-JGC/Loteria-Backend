@@ -10,6 +10,7 @@ import { CreateTicket } from './application/use-cases/create-ticket.use-case';
 import { EvaluateTicketById } from './application/use-cases/evaluate-ticket-by-id.use-case';
 import { FindTicketByFolio } from './application/use-cases/find-ticket-by-folio.use-case';
 import { FindTicketById } from './application/use-cases/find-ticket-by-id.use-case';
+import { GetTicketsSummary } from './application/use-cases/get-tickets-summary.use-case';
 import { ListTickets } from './application/use-cases/list-tickets.use-case';
 import { ListWinningTickets } from './application/use-cases/list-winning-tickets.use-case';
 import { MarkTicketPaid } from './application/use-cases/mark-ticket-paid.use-case';
@@ -34,6 +35,7 @@ import { TimestampFolioGenerator } from './infrastructure/services/timestamp-fol
     { provide: FOLIO_GENERATOR, useClass: TimestampFolioGenerator },
     CreateTicket,
     ListTickets,
+    GetTicketsSummary,
     FindTicketById,
     FindTicketByFolio,
     VoidTicket,

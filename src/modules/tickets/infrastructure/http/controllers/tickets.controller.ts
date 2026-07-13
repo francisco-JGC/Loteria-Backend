@@ -13,8 +13,10 @@ import type { RequestUser } from '../../../../auth/infrastructure/strategies/jwt
 import { CreateTicket } from '../../../application/use-cases/create-ticket.use-case';
 import { FindTicketByFolio } from '../../../application/use-cases/find-ticket-by-folio.use-case';
 import { FindTicketById } from '../../../application/use-cases/find-ticket-by-id.use-case';
+import { GetTicketsSummary } from '../../../application/use-cases/get-tickets-summary.use-case';
 import { ListTickets } from '../../../application/use-cases/list-tickets.use-case';
 import type { ListTicketsOutput } from '../../../application/use-cases/list-tickets.use-case';
+import type { TicketsSummaryOutput } from '../../../application/dtos/tickets-summary.output';
 import {
   ListWinningTickets,
   type WinningTicketOutput,
@@ -23,6 +25,7 @@ import { VoidTicket } from '../../../application/use-cases/void-ticket.use-case'
 import type { TicketOutput } from '../../../application/dtos/ticket.output';
 import { CreateTicketHttpDto } from '../dtos/create-ticket-http.dto';
 import { ListTicketsQueryDto } from '../dtos/list-tickets-query.dto';
+import { TicketsSummaryQueryDto } from '../dtos/tickets-summary-query.dto';
 import {
   EvaluateTicketById,
   type EvaluateTicketByIdOutput,
@@ -36,6 +39,7 @@ export class TicketsController {
   constructor(
     private readonly createTicket: CreateTicket,
     private readonly listTickets: ListTickets,
+    private readonly getTicketsSummary: GetTicketsSummary,
     private readonly findTicketById: FindTicketById,
     private readonly findTicketByFolio: FindTicketByFolio,
     private readonly voidTicketUseCase: VoidTicket,
@@ -75,6 +79,22 @@ export class TicketsController {
       to: query.to ? new Date(query.to) : undefined,
       page: query.page,
       limit: query.limit,
+    });
+  }
+
+  @Get('summary')
+  summary(
+    @CurrentUser() user: RequestUser,
+    @Query() query: TicketsSummaryQueryDto,
+  ): Promise<TicketsSummaryOutput> {
+    return this.getTicketsSummary.execute({
+      requesterId: user.id,
+      requesterRole: user.role,
+      salePointId: query.salePointId,
+      gameId: query.gameId,
+      sellerId: query.sellerId,
+      from: query.from ? new Date(query.from) : undefined,
+      to: query.to ? new Date(query.to) : undefined,
     });
   }
 
