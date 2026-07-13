@@ -1,20 +1,34 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 
 import { Public } from '../../../../auth/infrastructure/http/decorators/public.decorator';
 import { Roles } from '../../../../auth/infrastructure/http/decorators/roles.decorator';
 import { BootstrapFirstAdmin } from '../../../application/use-cases/bootstrap-first-admin.use-case';
 import { CreateUser } from '../../../application/use-cases/create-user.use-case';
 import { FindUserById } from '../../../application/use-cases/find-user-by-id.use-case';
+import {
+  ListUsers,
+  type ListUsersOutput,
+} from '../../../application/use-cases/list-users.use-case';
 import { UserOutput } from '../../../application/dtos/user.output';
 import { UserRole } from '../../../domain/value-objects/user-role';
 import { BootstrapAdminHttpDto } from '../dtos/bootstrap-admin-http.dto';
 import { CreateUserHttpDto } from '../dtos/create-user-http.dto';
+import { ListUsersQueryDto } from '../dtos/list-users-query.dto';
 
 @Controller('users')
 export class UsersController {
   constructor(
     private readonly createUser: CreateUser,
     private readonly findUserById: FindUserById,
+    private readonly listUsers: ListUsers,
     private readonly bootstrapFirstAdmin: BootstrapFirstAdmin,
   ) {}
 
@@ -28,6 +42,17 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   create(@Body() dto: CreateUserHttpDto): Promise<UserOutput> {
     return this.createUser.execute(dto);
+  }
+
+  @Get()
+  @Roles(UserRole.ADMIN)
+  list(@Query() query: ListUsersQueryDto): Promise<ListUsersOutput> {
+    return this.listUsers.execute({
+      role: query.role,
+      search: query.search,
+      limit: query.limit ?? 20,
+      offset: query.offset ?? 0,
+    });
   }
 
   @Get(':id')

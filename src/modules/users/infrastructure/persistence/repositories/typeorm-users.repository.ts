@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, type FindOptionsWhere, Repository } from 'typeorm';
 
 import { User } from '../../../domain/entities/user.entity';
-import { UsersRepository } from '../../../domain/repositories/users.repository';
+import type {
+  FindUsersOptions,
+  UsersRepository,
+} from '../../../domain/repositories/users.repository';
 import { UserOrmEntity } from '../entities/user.orm-entity';
 import { UserMapper } from '../mappers/user.mapper';
 
@@ -28,7 +31,40 @@ export class TypeOrmUsersRepository implements UsersRepository {
     return found ? UserMapper.toDomain(found) : null;
   }
 
+  async findMany(options: FindUsersOptions): Promise<User[]> {
+    const where = this.buildWhere(options);
+    const rows = await this.repo.find({
+      where,
+      order: { createdAt: 'DESC' },
+      take: options.limit,
+      skip: options.offset,
+    });
+    return rows.map(UserMapper.toDomain);
+  }
+
+  count(
+    options: Omit<FindUsersOptions, 'limit' | 'offset'>,
+  ): Promise<number> {
+    return this.repo.count({
+      where: this.buildWhere({ ...options, limit: 0, offset: 0 }),
+    });
+  }
+
   countAll(): Promise<number> {
     return this.repo.count();
+  }
+
+  private buildWhere(
+    options: FindUsersOptions,
+  ): FindOptionsWhere<UserOrmEntity> | FindOptionsWhere<UserOrmEntity>[] {
+    const base: FindOptionsWhere<UserOrmEntity> = {};
+    if (options.role) base.role = options.role;
+    const search = options.search?.trim();
+    if (!search) return base;
+    // Match on either username or display name, case-insensitive.
+    return [
+      { ...base, name: ILike(`%${search}%`) },
+      { ...base, username: ILike(`%${search}%`) },
+    ];
   }
 }
