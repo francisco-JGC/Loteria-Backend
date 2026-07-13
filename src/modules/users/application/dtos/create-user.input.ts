@@ -5,4 +5,8 @@ export interface CreateUserInput {
   password: string;
   name: string;
   role: UserRole;
+  address?: string | null;
+  nationalId?: string | null;
+  paymentPercentage?: number | null;
+  salePointId?: string | null;
 }

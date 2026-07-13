@@ -1,4 +1,15 @@
-import { IsEnum, IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
 
 import { UserRole } from '../../../domain/value-objects/user-role';
 
@@ -21,4 +32,24 @@ export class CreateUserHttpDto {
 
   @IsEnum(UserRole)
   role!: UserRole;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  nationalId?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  paymentPercentage?: number;
+
+  @IsOptional()
+  @IsUUID()
+  salePointId?: string;
 }

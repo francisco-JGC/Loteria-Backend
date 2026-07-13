@@ -8,6 +8,10 @@ export interface UserProps {
   hashedPassword: string;
   name: string;
   role: UserRole;
+  address: string | null;
+  nationalId: string | null;
+  paymentPercentage: number | null;
+  salePointId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,6 +26,10 @@ export class User extends AggregateRoot<UserProps> {
     hashedPassword: string;
     name: string;
     role: UserRole;
+    address?: string | null;
+    nationalId?: string | null;
+    paymentPercentage?: number | null;
+    salePointId?: string | null;
   }): User {
     const now = new Date();
     return new User(randomUUID(), {
@@ -29,6 +37,10 @@ export class User extends AggregateRoot<UserProps> {
       hashedPassword: input.hashedPassword,
       name: input.name,
       role: input.role,
+      address: input.address ?? null,
+      nationalId: input.nationalId ?? null,
+      paymentPercentage: input.paymentPercentage ?? null,
+      salePointId: input.salePointId ?? null,
       createdAt: now,
       updatedAt: now,
     });
@@ -52,6 +64,22 @@ export class User extends AggregateRoot<UserProps> {
 
   get hashedPassword(): string {
     return this.props.hashedPassword;
+  }
+
+  get address(): string | null {
+    return this.props.address;
+  }
+
+  get nationalId(): string | null {
+    return this.props.nationalId;
+  }
+
+  get paymentPercentage(): number | null {
+    return this.props.paymentPercentage;
+  }
+
+  get salePointId(): string | null {
+    return this.props.salePointId;
   }
 
   get createdAt(): Date {

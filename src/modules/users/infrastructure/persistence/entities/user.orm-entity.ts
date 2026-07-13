@@ -1,5 +1,15 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
+import { SalePointOrmEntity } from '../../../../sale-points/infrastructure/persistence/entities/sale-point.orm-entity';
 import { UserRole } from '../../../domain/value-objects/user-role';
 
 @Entity({ name: 'users' })
@@ -19,6 +29,23 @@ export class UserOrmEntity {
 
   @Column({ type: 'varchar', length: 20 })
   role!: UserRole;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  address!: string | null;
+
+  @Column({ type: 'varchar', length: 20, name: 'national_id', nullable: true })
+  nationalId!: string | null;
+
+  @Column({ type: 'integer', name: 'payment_percentage', nullable: true })
+  paymentPercentage!: number | null;
+
+  @Index()
+  @Column({ type: 'uuid', name: 'sale_point_id', nullable: true })
+  salePointId!: string | null;
+
+  @ManyToOne(() => SalePointOrmEntity, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'sale_point_id' })
+  salePoint?: SalePointOrmEntity | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

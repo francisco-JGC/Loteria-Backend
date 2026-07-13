@@ -8,6 +8,10 @@ export class UserMapper {
       hashedPassword: orm.hashedPassword,
       name: orm.name,
       role: orm.role,
+      address: orm.address ?? null,
+      nationalId: orm.nationalId ?? null,
+      paymentPercentage: orm.paymentPercentage ?? null,
+      salePointId: orm.salePointId ?? null,
       createdAt: orm.createdAt,
       updatedAt: orm.updatedAt,
     });
@@ -20,6 +24,10 @@ export class UserMapper {
     entity.hashedPassword = user.hashedPassword;
     entity.name = user.name;
     entity.role = user.role;
+    entity.address = user.address;
+    entity.nationalId = user.nationalId;
+    entity.paymentPercentage = user.paymentPercentage;
+    entity.salePointId = user.salePointId;
     entity.createdAt = user.createdAt;
     entity.updatedAt = user.updatedAt;
     return entity;
