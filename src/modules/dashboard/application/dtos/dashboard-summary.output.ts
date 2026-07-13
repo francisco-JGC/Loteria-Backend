@@ -9,10 +9,67 @@ export interface MonthlySeriesPoint {
   paid: number;
 }
 
+export interface GameBreakdownItem {
+  gameId: string;
+  gameName: string;
+  billed: number;
+  paid: number;
+}
+
+export type DrawStatus =
+  | 'settled'          // Result already registered.
+  | 'result_pending'   // Draw already happened and no result yet.
+  | 'in_progress'      // Inside the cutoff window (locked for sales).
+  | 'upcoming';        // Future draw not yet at cutoff.
+
+export interface TodayDrawItem {
+  gameId: string;
+  gameName: string;
+  /** Wall-clock time as stored in draw_schedules (e.g., "11:00"). Timezone-free. */
+  drawTime: string;
+  status: DrawStatus;
+  winningNumber: string | null;
+  cutoffMinutes: number;
+}
+
+export interface PendingPayouts {
+  count: number;
+  totalAmount: number;
+}
+
+export interface RankingItem {
+  id: string;
+  name: string;
+  amount: number;
+  ticketCount: number;
+}
+
 export interface DashboardSummaryOutput {
+  // Today
   billedToday: number;
   paidToday: number;
+  profitToday: number;
+  ticketsToday: number;
+  averageTicketToday: number;
+
+  // Yesterday (for delta calculations)
+  billedYesterday: number;
+  paidYesterday: number;
+  profitYesterday: number;
+  ticketsYesterday: number;
+
+  // Weekly window (last 7 days) + previous week for comparison.
   weeklyBilled: number;
+  weeklyBilledPrev: number;
+
+  // Users
   totalUsers: number;
+
+  // Rest
   monthlySeries: MonthlySeriesPoint[];
+  byGame: GameBreakdownItem[];
+  todayDraws: TodayDrawItem[];
+  pendingPayouts: PendingPayouts;
+  topSellers: RankingItem[];
+  topSalePoints: RankingItem[];
 }

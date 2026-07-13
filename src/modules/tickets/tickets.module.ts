@@ -40,5 +40,6 @@ import { TimestampFolioGenerator } from './infrastructure/services/timestamp-fol
     EvaluateTicketById,
     MarkTicketPaid,
   ],
+  exports: [ListWinningTickets],
 })
 export class TicketsModule {}
