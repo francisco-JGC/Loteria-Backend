@@ -2,6 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import type { UseCase } from '../../../../shared/application/use-case';
 import { NotFoundError } from '../../../../shared/domain/errors/domain.error';
+import {
+  DRAW_RESULTS_REPOSITORY,
+  type DrawResultsRepository,
+} from '../../../games/domain/repositories/draw-results.repository';
 import { UserRole } from '../../../users/domain/value-objects/user-role';
 import {
   TICKETS_REPOSITORY,
@@ -19,6 +23,8 @@ export interface FindTicketByIdInput {
 export class FindTicketById implements UseCase<FindTicketByIdInput, TicketOutput> {
   constructor(
     @Inject(TICKETS_REPOSITORY) private readonly tickets: TicketsRepository,
+    @Inject(DRAW_RESULTS_REPOSITORY)
+    private readonly drawResults: DrawResultsRepository,
   ) {}
 
   async execute(input: FindTicketByIdInput): Promise<TicketOutput> {
@@ -32,6 +38,10 @@ export class FindTicketById implements UseCase<FindTicketByIdInput, TicketOutput
       throw new NotFoundError('Ticket', input.id);
     }
 
-    return toTicketOutput(ticket);
+    const executed = await this.drawResults.findByGameAndDraw(
+      ticket.gameId,
+      ticket.drawAt,
+    );
+    return toTicketOutput(ticket, executed !== null);
   }
 }

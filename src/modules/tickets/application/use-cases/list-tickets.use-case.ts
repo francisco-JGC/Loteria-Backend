@@ -1,6 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import type { UseCase } from '../../../../shared/application/use-case';
+import {
+  DRAW_RESULTS_REPOSITORY,
+  type DrawResultsRepository,
+} from '../../../games/domain/repositories/draw-results.repository';
 import { PartnerScopeService } from '../../../sale-points/application/services/partner-scope.service';
 import { UserRole } from '../../../users/domain/value-objects/user-role';
 import {
@@ -34,6 +38,8 @@ export interface ListTicketsOutput {
 export class ListTickets implements UseCase<ListTicketsInput, ListTicketsOutput> {
   constructor(
     @Inject(TICKETS_REPOSITORY) private readonly tickets: TicketsRepository,
+    @Inject(DRAW_RESULTS_REPOSITORY)
+    private readonly drawResults: DrawResultsRepository,
     private readonly scope: PartnerScopeService,
   ) {}
 
@@ -67,8 +73,29 @@ export class ListTickets implements UseCase<ListTicketsInput, ListTicketsOutput>
       this.tickets.countMany(filters),
     ]);
 
+    const uniquePairs = new Map<string, { gameId: string; drawAt: Date }>();
+    for (const ticket of items) {
+      const key = `${ticket.gameId}|${ticket.drawAt.toISOString()}`;
+      if (!uniquePairs.has(key)) {
+        uniquePairs.set(key, { gameId: ticket.gameId, drawAt: ticket.drawAt });
+      }
+    }
+    const executedKeys = new Set<string>();
+    await Promise.all(
+      Array.from(uniquePairs.entries()).map(async ([key, pair]) => {
+        const result = await this.drawResults.findByGameAndDraw(
+          pair.gameId,
+          pair.drawAt,
+        );
+        if (result) executedKeys.add(key);
+      }),
+    );
+
     return {
-      items: items.map((ticket) => toTicketOutput(ticket)),
+      items: items.map((ticket) => {
+        const key = `${ticket.gameId}|${ticket.drawAt.toISOString()}`;
+        return toTicketOutput(ticket, executedKeys.has(key));
+      }),
       page: input.page,
       limit: input.limit,
       total,

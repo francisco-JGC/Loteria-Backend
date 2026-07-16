@@ -5,6 +5,10 @@ import {
   NotFoundError,
   ValidationError,
 } from '../../../../shared/domain/errors/domain.error';
+import {
+  DRAW_RESULTS_REPOSITORY,
+  type DrawResultsRepository,
+} from '../../../games/domain/repositories/draw-results.repository';
 import { UserRole } from '../../../users/domain/value-objects/user-role';
 import {
   TICKETS_REPOSITORY,
@@ -25,11 +29,23 @@ export interface VoidTicketInput {
 export class VoidTicket implements UseCase<VoidTicketInput, TicketOutput> {
   constructor(
     @Inject(TICKETS_REPOSITORY) private readonly tickets: TicketsRepository,
+    @Inject(DRAW_RESULTS_REPOSITORY)
+    private readonly drawResults: DrawResultsRepository,
   ) {}
 
   async execute(input: VoidTicketInput): Promise<TicketOutput> {
     const ticket = await this.tickets.findById(input.id);
     if (!ticket) throw new NotFoundError('Ticket', input.id);
+
+    const executed = await this.drawResults.findByGameAndDraw(
+      ticket.gameId,
+      ticket.drawAt,
+    );
+    if (executed) {
+      throw new ValidationError(
+        'El sorteo ya se corrió, el ticket no se puede anular',
+      );
+    }
 
     const now = new Date();
     const minutesUntilDraw = ticket.minutesUntilDraw(now);

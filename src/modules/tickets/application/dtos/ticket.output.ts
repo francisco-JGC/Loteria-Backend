@@ -25,6 +25,7 @@ export interface TicketOutput {
   count: number;
   drawAt: Date;
   cutoffMinutes: number;
+  drawExecuted: boolean;
   paidAt: Date | null;
   paidById: string | null;
   paidPrize: number;
@@ -33,7 +34,10 @@ export interface TicketOutput {
   updatedAt: Date;
 }
 
-export const toTicketOutput = (ticket: Ticket): TicketOutput => ({
+export const toTicketOutput = (
+  ticket: Ticket,
+  drawExecuted = false,
+): TicketOutput => ({
   id: ticket.id,
   folio: ticket.folio,
   gameId: ticket.gameId,
@@ -48,6 +52,7 @@ export const toTicketOutput = (ticket: Ticket): TicketOutput => ({
   count: ticket.count,
   drawAt: ticket.drawAt,
   cutoffMinutes: ticket.cutoffMinutes,
+  drawExecuted,
   paidAt: ticket.paidAt,
   paidById: ticket.paidById,
   paidPrize: ticket.paidPrize,
