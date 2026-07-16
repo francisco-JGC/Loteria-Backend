@@ -43,6 +43,12 @@ export class UpdateUserHttpDto {
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @IsString()
+  @MaxLength(20)
+  phone?: string | null;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
   @MaxLength(255)
   address?: string | null;
 

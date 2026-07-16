@@ -65,6 +65,7 @@ export class UpdateUser implements UseCase<UpdateUserInput, UserOutput> {
       name: input.name,
       role: input.role,
       isActive: input.isActive,
+      phone: input.phone,
       address: input.address,
       nationalId: input.nationalId,
       paymentPercentage: input.paymentPercentage,

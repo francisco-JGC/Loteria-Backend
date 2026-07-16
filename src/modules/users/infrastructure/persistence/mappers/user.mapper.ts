@@ -9,6 +9,7 @@ export class UserMapper {
       name: orm.name,
       role: orm.role,
       isActive: orm.isActive,
+      phone: orm.phone ?? null,
       address: orm.address ?? null,
       nationalId: orm.nationalId ?? null,
       paymentPercentage: orm.paymentPercentage ?? null,
@@ -26,6 +27,7 @@ export class UserMapper {
     entity.name = user.name;
     entity.role = user.role;
     entity.isActive = user.isActive;
+    entity.phone = user.phone;
     entity.address = user.address;
     entity.nationalId = user.nationalId;
     entity.paymentPercentage = user.paymentPercentage;

@@ -8,6 +8,7 @@ export interface UpdateUserInput {
   /** New plaintext password. Skipped if undefined. */
   password?: string;
   /** `null` clears the value; `undefined` leaves it untouched. */
+  phone?: string | null;
   address?: string | null;
   nationalId?: string | null;
   paymentPercentage?: number | null;

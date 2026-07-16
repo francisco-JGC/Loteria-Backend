@@ -35,6 +35,11 @@ export class CreateUserHttpDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(20)
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(255)
   address?: string;
 

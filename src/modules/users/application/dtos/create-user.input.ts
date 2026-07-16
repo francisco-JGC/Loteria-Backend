@@ -5,6 +5,7 @@ export interface CreateUserInput {
   password: string;
   name: string;
   role: UserRole;
+  phone?: string | null;
   address?: string | null;
   nationalId?: string | null;
   paymentPercentage?: number | null;

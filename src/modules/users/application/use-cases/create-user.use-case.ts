@@ -55,6 +55,7 @@ export class CreateUser implements UseCase<CreateUserInput, UserOutput> {
       hashedPassword: hashed,
       name: input.name,
       role: input.role,
+      phone: input.phone ?? null,
       address: input.address ?? null,
       nationalId: input.nationalId ?? null,
       paymentPercentage: input.paymentPercentage ?? null,

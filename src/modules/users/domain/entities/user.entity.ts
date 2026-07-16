@@ -9,6 +9,7 @@ export interface UserProps {
   name: string;
   role: UserRole;
   isActive: boolean;
+  phone: string | null;
   address: string | null;
   nationalId: string | null;
   paymentPercentage: number | null;
@@ -27,6 +28,7 @@ export class User extends AggregateRoot<UserProps> {
     hashedPassword: string;
     name: string;
     role: UserRole;
+    phone?: string | null;
     address?: string | null;
     nationalId?: string | null;
     paymentPercentage?: number | null;
@@ -39,6 +41,7 @@ export class User extends AggregateRoot<UserProps> {
       name: input.name,
       role: input.role,
       isActive: true,
+      phone: input.phone ?? null,
       address: input.address ?? null,
       nationalId: input.nationalId ?? null,
       paymentPercentage: input.paymentPercentage ?? null,
@@ -52,6 +55,7 @@ export class User extends AggregateRoot<UserProps> {
     name?: string;
     role?: UserRole;
     isActive?: boolean;
+    phone?: string | null;
     address?: string | null;
     nationalId?: string | null;
     paymentPercentage?: number | null;
@@ -61,6 +65,7 @@ export class User extends AggregateRoot<UserProps> {
     if (patch.name !== undefined) this.props.name = patch.name;
     if (patch.role !== undefined) this.props.role = patch.role;
     if (patch.isActive !== undefined) this.props.isActive = patch.isActive;
+    if (patch.phone !== undefined) this.props.phone = patch.phone;
     if (patch.address !== undefined) this.props.address = patch.address;
     if (patch.nationalId !== undefined)
       this.props.nationalId = patch.nationalId;
@@ -95,6 +100,10 @@ export class User extends AggregateRoot<UserProps> {
 
   get isActive(): boolean {
     return this.props.isActive;
+  }
+
+  get phone(): string | null {
+    return this.props.phone;
   }
 
   get address(): string | null {
