@@ -33,9 +33,9 @@ export class TypeOrmSalePointsRepository implements SalePointsRepository {
     return rows.map((row) => SalePointMapper.toDomain(row));
   }
 
-  async findByOwner(ownerId: string): Promise<SalePoint[]> {
+  async findByPartner(partnerId: string): Promise<SalePoint[]> {
     const rows = await this.repo.find({
-      where: { ownerId },
+      where: { ownerPartnerId: partnerId },
       order: { createdAt: 'DESC' },
     });
     return rows.map((row) => SalePointMapper.toDomain(row));

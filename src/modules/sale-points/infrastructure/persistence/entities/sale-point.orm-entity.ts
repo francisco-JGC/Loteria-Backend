@@ -23,12 +23,13 @@ export class SalePointOrmEntity {
   @Column({ type: 'varchar', length: 30 })
   code!: string;
 
-  @Column({ type: 'uuid', name: 'owner_id' })
-  ownerId!: string;
+  @Index()
+  @Column({ type: 'uuid', name: 'owner_partner_id', nullable: true })
+  ownerPartnerId!: string | null;
 
-  @ManyToOne(() => UserOrmEntity, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'owner_id' })
-  owner?: UserOrmEntity;
+  @ManyToOne(() => UserOrmEntity, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'owner_partner_id' })
+  ownerPartner?: UserOrmEntity | null;
 
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive!: boolean;

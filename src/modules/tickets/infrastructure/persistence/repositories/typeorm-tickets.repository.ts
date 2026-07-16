@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import {
+  Between,
+  In,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import type { FindOptionsWhere } from 'typeorm';
 
 import type { Ticket } from '../../../domain/entities/ticket.entity';
@@ -41,6 +47,8 @@ export class TypeOrmTicketsRepository implements TicketsRepository {
   }
 
   async findMany(filters: FindTicketsFilters): Promise<Ticket[]> {
+    // Partner scoping with an empty allow-list means "nothing accessible".
+    if (filters.salePointIds && filters.salePointIds.length === 0) return [];
     const rows = await this.repo.find({
       where: this.buildWhere(filters),
       order: { createdAt: 'DESC' },
@@ -51,6 +59,9 @@ export class TypeOrmTicketsRepository implements TicketsRepository {
   }
 
   countMany(filters: FindTicketsFilters): Promise<number> {
+    if (filters.salePointIds && filters.salePointIds.length === 0) {
+      return Promise.resolve(0);
+    }
     return this.repo.count({ where: this.buildWhere(filters) });
   }
 
@@ -59,7 +70,11 @@ export class TypeOrmTicketsRepository implements TicketsRepository {
   ): FindOptionsWhere<TicketOrmEntity> {
     const where: FindOptionsWhere<TicketOrmEntity> = {};
     if (filters.sellerId) where.sellerId = filters.sellerId;
-    if (filters.salePointId) where.salePointId = filters.salePointId;
+    if (filters.salePointId) {
+      where.salePointId = filters.salePointId;
+    } else if (filters.salePointIds && filters.salePointIds.length > 0) {
+      where.salePointId = In(filters.salePointIds);
+    }
     if (filters.gameId) where.gameId = filters.gameId;
     if (filters.status) where.status = filters.status;
     if (filters.from && filters.to) {

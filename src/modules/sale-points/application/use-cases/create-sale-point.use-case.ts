@@ -16,7 +16,9 @@ import { type CreateSalePointInput } from '../dtos/create-sale-point.input';
 import { toSalePointOutput, type SalePointOutput } from '../dtos/sale-point.output';
 
 @Injectable()
-export class CreateSalePoint implements UseCase<CreateSalePointInput, SalePointOutput> {
+export class CreateSalePoint
+  implements UseCase<CreateSalePointInput, SalePointOutput>
+{
   constructor(
     @Inject(SALE_POINTS_REPOSITORY)
     private readonly salePoints: SalePointsRepository,
@@ -24,10 +26,16 @@ export class CreateSalePoint implements UseCase<CreateSalePointInput, SalePointO
   ) {}
 
   async execute(input: CreateSalePointInput): Promise<SalePointOutput> {
-    const owner = await this.users.findById(input.ownerId);
-    if (!owner) throw new NotFoundError('User', input.ownerId);
-    if (owner.role !== UserRole.SELLER) {
-      throw new ValidationError('Only users with role "seller" can own a sale point');
+    // Owning partner is optional: null means the sucursal is operated
+    // directly by the main admin/owner and only admins can see it.
+    if (input.ownerPartnerId) {
+      const partner = await this.users.findById(input.ownerPartnerId);
+      if (!partner) throw new NotFoundError('User', input.ownerPartnerId);
+      if (partner.role !== UserRole.PARTNER) {
+        throw new ValidationError(
+          'Only users with role "partner" can own a sucursal',
+        );
+      }
     }
 
     const existing = await this.salePoints.findByCode(input.code);
@@ -36,7 +44,7 @@ export class CreateSalePoint implements UseCase<CreateSalePointInput, SalePointO
     const salePoint = SalePoint.create({
       name: input.name,
       code: input.code,
-      ownerId: input.ownerId,
+      ownerPartnerId: input.ownerPartnerId ?? null,
     });
     await this.salePoints.save(salePoint);
     return toSalePointOutput(salePoint);

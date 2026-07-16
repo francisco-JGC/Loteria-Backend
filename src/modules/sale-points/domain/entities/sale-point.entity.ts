@@ -5,7 +5,12 @@ import { AggregateRoot } from '../../../../shared/domain/aggregate-root';
 export interface SalePointProps {
   name: string;
   code: string;
-  ownerId: string;
+  /**
+   * `users.id` of the partner (socio) that owns this sucursal. `null`
+   * means the main admin/owner is the direct operator — those sucursales
+   * are only visible to admins.
+   */
+  ownerPartnerId: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -16,12 +21,16 @@ export class SalePoint extends AggregateRoot<SalePointProps> {
     super(id, props);
   }
 
-  static create(input: { name: string; code: string; ownerId: string }): SalePoint {
+  static create(input: {
+    name: string;
+    code: string;
+    ownerPartnerId: string | null;
+  }): SalePoint {
     const now = new Date();
     return new SalePoint(randomUUID(), {
       name: input.name,
       code: input.code,
-      ownerId: input.ownerId,
+      ownerPartnerId: input.ownerPartnerId,
       isActive: true,
       createdAt: now,
       updatedAt: now,
@@ -40,8 +49,8 @@ export class SalePoint extends AggregateRoot<SalePointProps> {
     return this.props.code;
   }
 
-  get ownerId(): string {
-    return this.props.ownerId;
+  get ownerPartnerId(): string | null {
+    return this.props.ownerPartnerId;
   }
 
   get isActive(): boolean {
@@ -66,8 +75,8 @@ export class SalePoint extends AggregateRoot<SalePointProps> {
     this.props.updatedAt = new Date();
   }
 
-  reassignOwner(newOwnerId: string): void {
-    this.props.ownerId = newOwnerId;
+  reassignPartner(newOwnerPartnerId: string | null): void {
+    this.props.ownerPartnerId = newOwnerPartnerId;
     this.props.updatedAt = new Date();
   }
 }

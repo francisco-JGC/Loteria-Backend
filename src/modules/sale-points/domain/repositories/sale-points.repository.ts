@@ -7,5 +7,6 @@ export interface SalePointsRepository {
   findById(id: string): Promise<SalePoint | null>;
   findByCode(code: string): Promise<SalePoint | null>;
   findAll(): Promise<SalePoint[]>;
-  findByOwner(ownerId: string): Promise<SalePoint[]>;
+  /** Sucursales owned by a specific partner (via `owner_partner_id`). */
+  findByPartner(partnerId: string): Promise<SalePoint[]>;
 }

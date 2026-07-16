@@ -1,4 +1,12 @@
-import { IsNotEmpty, IsString, IsUUID, MaxLength, Matches, MinLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 export class CreateSalePointHttpDto {
   @IsString()
@@ -15,6 +23,7 @@ export class CreateSalePointHttpDto {
   })
   code!: string;
 
+  @IsOptional()
   @IsUUID()
-  ownerId!: string;
+  ownerPartnerId?: string;
 }

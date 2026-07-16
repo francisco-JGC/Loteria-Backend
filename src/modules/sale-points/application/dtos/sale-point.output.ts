@@ -4,7 +4,7 @@ export interface SalePointOutput {
   id: string;
   name: string;
   code: string;
-  ownerId: string;
+  ownerPartnerId: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -14,7 +14,7 @@ export const toSalePointOutput = (salePoint: SalePoint): SalePointOutput => ({
   id: salePoint.id,
   name: salePoint.name,
   code: salePoint.code,
-  ownerId: salePoint.ownerId,
+  ownerPartnerId: salePoint.ownerPartnerId,
   isActive: salePoint.isActive,
   createdAt: salePoint.createdAt,
   updatedAt: salePoint.updatedAt,

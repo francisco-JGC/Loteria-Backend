@@ -6,6 +6,7 @@ import { SALE_POINTS_REPOSITORY } from './domain/repositories/sale-points.reposi
 import { CreateSalePoint } from './application/use-cases/create-sale-point.use-case';
 import { ListAllSalePoints } from './application/use-cases/list-all-sale-points.use-case';
 import { ListSalePointsForUser } from './application/use-cases/list-sale-points-for-user.use-case';
+import { PartnerScopeService } from './application/services/partner-scope.service';
 import { ToggleSalePoint } from './application/use-cases/toggle-sale-point.use-case';
 import { SalePointsController } from './infrastructure/http/controllers/sale-points.controller';
 import { SalePointOrmEntity } from './infrastructure/persistence/entities/sale-point.orm-entity';
@@ -19,8 +20,13 @@ import { TypeOrmSalePointsRepository } from './infrastructure/persistence/reposi
     CreateSalePoint,
     ListAllSalePoints,
     ListSalePointsForUser,
+    PartnerScopeService,
     ToggleSalePoint,
   ],
-  exports: [SALE_POINTS_REPOSITORY, ListSalePointsForUser],
+  exports: [
+    SALE_POINTS_REPOSITORY,
+    ListSalePointsForUser,
+    PartnerScopeService,
+  ],
 })
 export class SalePointsModule {}

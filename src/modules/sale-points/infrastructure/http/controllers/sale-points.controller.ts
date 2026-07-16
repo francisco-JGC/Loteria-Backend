@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
 
 import { CurrentUser } from '../../../../auth/infrastructure/http/decorators/current-user.decorator';
 import { Roles } from '../../../../auth/infrastructure/http/decorators/roles.decorator';
@@ -28,9 +36,12 @@ export class SalePointsController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN)
-  findAll(): Promise<SalePointOutput[]> {
-    return this.listAllSalePoints.execute();
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  findAll(@CurrentUser() user: RequestUser): Promise<SalePointOutput[]> {
+    return this.listAllSalePoints.execute({
+      requesterId: user.id,
+      requesterRole: user.role,
+    });
   }
 
   @Get('mine')
@@ -39,11 +50,17 @@ export class SalePointsController {
   }
 
   @Patch(':id/toggle')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
   toggle(
+    @CurrentUser() user: RequestUser,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ToggleSalePointHttpDto,
   ): Promise<SalePointOutput> {
-    return this.toggleSalePoint.execute({ id, active: dto.active });
+    return this.toggleSalePoint.execute({
+      id,
+      active: dto.active,
+      requesterId: user.id,
+      requesterRole: user.role,
+    });
   }
 }

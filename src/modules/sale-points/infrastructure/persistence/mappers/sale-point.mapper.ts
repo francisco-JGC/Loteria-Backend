@@ -6,7 +6,7 @@ export class SalePointMapper {
     return SalePoint.restore(orm.id, {
       name: orm.name,
       code: orm.code,
-      ownerId: orm.ownerId,
+      ownerPartnerId: orm.ownerPartnerId,
       isActive: orm.isActive,
       createdAt: orm.createdAt,
       updatedAt: orm.updatedAt,
@@ -18,7 +18,7 @@ export class SalePointMapper {
     entity.id = salePoint.id;
     entity.name = salePoint.name;
     entity.code = salePoint.code;
-    entity.ownerId = salePoint.ownerId;
+    entity.ownerPartnerId = salePoint.ownerPartnerId;
     entity.isActive = salePoint.isActive;
     entity.createdAt = salePoint.createdAt;
     entity.updatedAt = salePoint.updatedAt;
