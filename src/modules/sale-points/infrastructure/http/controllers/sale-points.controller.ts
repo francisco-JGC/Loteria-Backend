@@ -17,8 +17,10 @@ import { CreateSalePoint } from '../../../application/use-cases/create-sale-poin
 import { ListAllSalePoints } from '../../../application/use-cases/list-all-sale-points.use-case';
 import { ListSalePointsForUser } from '../../../application/use-cases/list-sale-points-for-user.use-case';
 import { ToggleSalePoint } from '../../../application/use-cases/toggle-sale-point.use-case';
+import { UpdateSalePoint } from '../../../application/use-cases/update-sale-point.use-case';
 import { CreateSalePointHttpDto } from '../dtos/create-sale-point-http.dto';
 import { ToggleSalePointHttpDto } from '../dtos/toggle-sale-point-http.dto';
+import { UpdateSalePointHttpDto } from '../dtos/update-sale-point-http.dto';
 
 @Controller('sale-points')
 export class SalePointsController {
@@ -27,6 +29,7 @@ export class SalePointsController {
     private readonly listAllSalePoints: ListAllSalePoints,
     private readonly listSalePointsForUser: ListSalePointsForUser,
     private readonly toggleSalePoint: ToggleSalePoint,
+    private readonly updateSalePoint: UpdateSalePoint,
   ) {}
 
   @Post()
@@ -62,5 +65,14 @@ export class SalePointsController {
       requesterId: user.id,
       requesterRole: user.role,
     });
+  }
+
+  @Patch(':id')
+  @Roles(UserRole.ADMIN)
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateSalePointHttpDto,
+  ): Promise<SalePointOutput> {
+    return this.updateSalePoint.execute({ id, ...dto });
   }
 }

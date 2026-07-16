@@ -79,4 +79,17 @@ export class SalePoint extends AggregateRoot<SalePointProps> {
     this.props.ownerPartnerId = newOwnerPartnerId;
     this.props.updatedAt = new Date();
   }
+
+  update(patch: {
+    name?: string;
+    code?: string;
+    ownerPartnerId?: string | null;
+  }): void {
+    if (patch.name !== undefined) this.props.name = patch.name;
+    if (patch.code !== undefined) this.props.code = patch.code;
+    if (patch.ownerPartnerId !== undefined) {
+      this.props.ownerPartnerId = patch.ownerPartnerId;
+    }
+    this.props.updatedAt = new Date();
+  }
 }

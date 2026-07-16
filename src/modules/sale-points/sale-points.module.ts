@@ -8,6 +8,7 @@ import { ListAllSalePoints } from './application/use-cases/list-all-sale-points.
 import { ListSalePointsForUser } from './application/use-cases/list-sale-points-for-user.use-case';
 import { PartnerScopeService } from './application/services/partner-scope.service';
 import { ToggleSalePoint } from './application/use-cases/toggle-sale-point.use-case';
+import { UpdateSalePoint } from './application/use-cases/update-sale-point.use-case';
 import { SalePointsController } from './infrastructure/http/controllers/sale-points.controller';
 import { SalePointOrmEntity } from './infrastructure/persistence/entities/sale-point.orm-entity';
 import { TypeOrmSalePointsRepository } from './infrastructure/persistence/repositories/typeorm-sale-points.repository';
@@ -25,6 +26,7 @@ import { TypeOrmSalePointsRepository } from './infrastructure/persistence/reposi
     ListSalePointsForUser,
     PartnerScopeService,
     ToggleSalePoint,
+    UpdateSalePoint,
   ],
   exports: [
     SALE_POINTS_REPOSITORY,
