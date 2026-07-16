@@ -13,9 +13,11 @@ import type { RequestUser } from '../../../../auth/infrastructure/strategies/jwt
 import { CreateTicket } from '../../../application/use-cases/create-ticket.use-case';
 import { FindTicketByFolio } from '../../../application/use-cases/find-ticket-by-folio.use-case';
 import { FindTicketById } from '../../../application/use-cases/find-ticket-by-id.use-case';
+import { GetTicketsByDraw } from '../../../application/use-cases/get-tickets-by-draw.use-case';
 import { GetTicketsSummary } from '../../../application/use-cases/get-tickets-summary.use-case';
 import { ListTickets } from '../../../application/use-cases/list-tickets.use-case';
 import type { ListTicketsOutput } from '../../../application/use-cases/list-tickets.use-case';
+import type { TicketsByDrawOutput } from '../../../application/dtos/tickets-by-draw.output';
 import type { TicketsSummaryOutput } from '../../../application/dtos/tickets-summary.output';
 import {
   ListWinningTickets,
@@ -25,6 +27,7 @@ import { VoidTicket } from '../../../application/use-cases/void-ticket.use-case'
 import type { TicketOutput } from '../../../application/dtos/ticket.output';
 import { CreateTicketHttpDto } from '../dtos/create-ticket-http.dto';
 import { ListTicketsQueryDto } from '../dtos/list-tickets-query.dto';
+import { TicketsByDrawQueryDto } from '../dtos/tickets-by-draw-query.dto';
 import { TicketsSummaryQueryDto } from '../dtos/tickets-summary-query.dto';
 import {
   EvaluateTicketById,
@@ -40,6 +43,7 @@ export class TicketsController {
     private readonly createTicket: CreateTicket,
     private readonly listTickets: ListTickets,
     private readonly getTicketsSummary: GetTicketsSummary,
+    private readonly getTicketsByDraw: GetTicketsByDraw,
     private readonly findTicketById: FindTicketById,
     private readonly findTicketByFolio: FindTicketByFolio,
     private readonly voidTicketUseCase: VoidTicket,
@@ -88,6 +92,22 @@ export class TicketsController {
     @Query() query: TicketsSummaryQueryDto,
   ): Promise<TicketsSummaryOutput> {
     return this.getTicketsSummary.execute({
+      requesterId: user.id,
+      requesterRole: user.role,
+      salePointId: query.salePointId,
+      gameId: query.gameId,
+      sellerId: query.sellerId,
+      from: query.from ? new Date(query.from) : undefined,
+      to: query.to ? new Date(query.to) : undefined,
+    });
+  }
+
+  @Get('by-draw')
+  byDraw(
+    @CurrentUser() user: RequestUser,
+    @Query() query: TicketsByDrawQueryDto,
+  ): Promise<TicketsByDrawOutput> {
+    return this.getTicketsByDraw.execute({
       requesterId: user.id,
       requesterRole: user.role,
       salePointId: query.salePointId,
