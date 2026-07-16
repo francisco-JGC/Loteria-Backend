@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
+import { BUSINESS_TZ } from '../../../../../shared/domain/business-time';
 import type { DrawResult } from '../../../domain/entities/draw-result.entity';
 import type {
   DrawResultsFilters,
@@ -35,21 +36,30 @@ export class TypeOrmDrawResultsRepository implements DrawResultsRepository {
   }
 
   async findMany(filters: DrawResultsFilters): Promise<DrawResult[]> {
-    const where: Record<string, unknown> = {};
-    if (filters.gameId) where.gameId = filters.gameId;
-    if (filters.from && filters.to) {
-      where.drawAt = Between(filters.from, filters.to);
-    } else if (filters.from) {
-      where.drawAt = MoreThanOrEqual(filters.from);
-    } else if (filters.to) {
-      where.drawAt = LessThanOrEqual(filters.to);
+    // Join with `games` so we can sort by (day desc, game.order_index asc,
+    // time asc) — that's what web + mobile "últimos resultados" render:
+    // all Diaria draws together, then Juega 3, etc., grouped by day.
+    // The day boundary is computed in BUSINESS_TZ so a late-evening draw
+    // in Managua doesn't spill into the next UTC bucket.
+    const qb = this.repo
+      .createQueryBuilder('dr')
+      .innerJoin('games', 'g', 'g.id = dr.game_id');
+    if (filters.gameId) {
+      qb.andWhere('dr.game_id = :gameId', { gameId: filters.gameId });
     }
-    const rows = await this.repo.find({
-      where,
-      order: { drawAt: 'DESC' },
-      take: filters.limit,
-      skip: filters.offset,
-    });
+    if (filters.from) {
+      qb.andWhere('dr.draw_at >= :from', { from: filters.from });
+    }
+    if (filters.to) {
+      qb.andWhere('dr.draw_at <= :to', { to: filters.to });
+    }
+    qb.orderBy(`(dr.draw_at AT TIME ZONE :tz)::date`, 'DESC')
+      .addOrderBy('g.order_index', 'ASC')
+      .addOrderBy('dr.draw_at', 'ASC')
+      .setParameter('tz', BUSINESS_TZ);
+    if (filters.limit) qb.take(filters.limit);
+    if (filters.offset) qb.skip(filters.offset);
+    const rows = await qb.getMany();
     return rows.map((row) => DrawResultMapper.toDomain(row));
   }
 

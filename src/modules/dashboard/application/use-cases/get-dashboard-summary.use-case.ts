@@ -1,14 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 import type { UseCase } from '../../../../shared/application/use-case';
 import { BUSINESS_TZ } from '../../../../shared/domain/business-time';
+import {
+  GAMES_REPOSITORY,
+  type GamesRepository,
+} from '../../../games/domain/repositories/games.repository';
 import { UserRole } from '../../../users/domain/value-objects/user-role';
 import { ListWinningTickets } from '../../../tickets/application/use-cases/list-winning-tickets.use-case';
 import type {
   DashboardSummaryOutput,
   DrawStatus,
+  PendingPayoutPreview,
   RankingItem,
   TodayDrawItem,
 } from '../dtos/dashboard-summary.output';
@@ -35,6 +40,7 @@ export class GetDashboardSummary
 {
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
+    @Inject(GAMES_REPOSITORY) private readonly games: GamesRepository,
     private readonly listWinningTickets: ListWinningTickets,
   ) {}
 
@@ -352,15 +358,33 @@ export class GetDashboardSummary
       from: new Date(Date.now() - 30 * 24 * 60 * 60_000),
       to: new Date(),
     });
-    let count = 0;
+    const unpaid = winners.filter((w) => w.ticket.paidAt === null);
     let total = 0;
-    for (const w of winners) {
-      if (w.ticket.paidAt === null) {
-        count += 1;
-        total += w.totalPrize;
-      }
-    }
-    return { count, totalAmount: total };
+    for (const w of unpaid) total += w.totalPrize;
+
+    // Preview: most recent 4 unpaid winners, with game name resolved.
+    unpaid.sort(
+      (a, b) =>
+        new Date(b.ticket.drawAt).getTime() -
+        new Date(a.ticket.drawAt).getTime(),
+    );
+    const preview = unpaid.slice(0, 4);
+    const gameIds = Array.from(new Set(preview.map((w) => w.ticket.gameId)));
+    const games = await Promise.all(gameIds.map((id) => this.games.findById(id)));
+    const gameNameById = new Map<string, string>();
+    for (const g of games) if (g) gameNameById.set(g.id, g.name);
+
+    const items: PendingPayoutPreview[] = preview.map((w) => ({
+      ticketId: w.ticket.id,
+      folio: w.ticket.folio,
+      gameId: w.ticket.gameId,
+      gameName: gameNameById.get(w.ticket.gameId) ?? '—',
+      drawAt: new Date(w.ticket.drawAt).toISOString(),
+      totalPrize: w.totalPrize,
+      client: w.ticket.client,
+    }));
+
+    return { count: unpaid.length, totalAmount: total, items };
   }
 
   // --- Top sellers / sale points --------------------------------------------

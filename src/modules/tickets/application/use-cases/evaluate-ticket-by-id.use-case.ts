@@ -21,6 +21,9 @@ export interface EvaluateTicketByIdOutput {
   isWinner: boolean;
   hasPendingDraw: boolean;
   totalPrize: number;
+  /** When the prize was collected. Null while it's still pending. */
+  paidAt: Date | null;
+  paidPrize: number;
   lines: TicketLineEvaluation[];
 }
 
@@ -47,6 +50,8 @@ export class EvaluateTicketById
       isWinner: evaluation.isWinner,
       hasPendingDraw: evaluation.hasPendingDraw,
       totalPrize: evaluation.totalPrize,
+      paidAt: ticket.paidAt,
+      paidPrize: ticket.paidPrize,
       lines: evaluation.lines,
     };
   }
