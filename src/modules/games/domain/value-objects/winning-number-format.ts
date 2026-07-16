@@ -45,12 +45,31 @@ export class WinningNumberFormat {
   }
 
   private static normalizeDate(value: string): string {
-    const match = value.match(/^(\d{1,2})[-/](\w{3})$/);
-    if (!match) {
-      throw new ValidationError('Winning date must be in DD-MMM format');
+    // Accept both `DD-MMM` (13-feb) and `DD/MM` / `DD-MM` numeric (13/2).
+    // Normalize to the canonical `DD-MMM` that ticket labels use — otherwise
+    // the evaluator's exact string match against `line.label` never fires.
+    const abbrevMatch = value.match(/^(\d{1,2})[-/](\w{3})$/);
+    const numericMatch = value.match(/^(\d{1,2})[-/](\d{1,2})$/);
+
+    let day: number;
+    let monthAbbr: string;
+
+    if (abbrevMatch) {
+      day = Number(abbrevMatch[1]);
+      monthAbbr = abbrevMatch[2].toLowerCase();
+    } else if (numericMatch) {
+      day = Number(numericMatch[1]);
+      const monthNumber = Number(numericMatch[2]);
+      if (monthNumber < 1 || monthNumber > 12) {
+        throw new ValidationError('Winning month must be 1-12');
+      }
+      monthAbbr = MONTH_ABBREVIATIONS[monthNumber - 1];
+    } else {
+      throw new ValidationError(
+        'Winning date must be DD-MMM (ej. 13-feb) o DD/MM (ej. 13/02)',
+      );
     }
-    const day = Number(match[1]);
-    const monthAbbr = match[2].toLowerCase();
+
     if (day < 1 || day > 31) {
       throw new ValidationError('Winning day must be 1-31');
     }
