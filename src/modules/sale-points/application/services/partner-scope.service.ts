@@ -36,8 +36,9 @@ export class PartnerScopeService {
       const owned = await this.salePoints.findByPartner(requesterId);
       return owned.map((sp) => sp.id);
     }
-    // Sellers scope by seller_id (their own tickets); this service isn't
-    // used for that path — return an empty set to fail-closed if it ever is.
-    return [];
+    // Sellers are scoped upstream by their own sellerId — no additional
+    // sale-point restriction needed here. Endpoints that shouldn't be
+    // reachable by sellers must gate with @Roles, not with this service.
+    return null;
   }
 }
