@@ -81,6 +81,7 @@ export class TicketsController {
       status: query.status,
       from: query.from ? new Date(query.from) : undefined,
       to: query.to ? new Date(query.to) : undefined,
+      drawTime: query.drawTime,
       page: query.page,
       limit: query.limit,
     });

@@ -16,6 +16,12 @@ export interface FindTicketsFilters {
   status?: TicketStatus;
   from?: Date;
   to?: Date;
+  /**
+   * Restrict to tickets whose `draw_at` matches this time-of-day (HH:MM)
+   * in the business timezone. Used to filter "el sorteo de las 11:00" over
+   * a date range regardless of which specific day each ticket landed on.
+   */
+  drawTime?: string;
   limit: number;
   offset: number;
 }

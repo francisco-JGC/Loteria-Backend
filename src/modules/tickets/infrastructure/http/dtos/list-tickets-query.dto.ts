@@ -4,7 +4,9 @@ import {
   IsEnum,
   IsInt,
   IsOptional,
+  IsString,
   IsUUID,
+  Matches,
   Max,
   Min,
 } from 'class-validator';
@@ -35,6 +37,13 @@ export class ListTicketsQueryDto {
   @IsOptional()
   @IsDateString()
   to?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, {
+    message: 'drawTime must be HH:MM in 24-hour format',
+  })
+  drawTime?: string;
 
   @IsOptional()
   @Type(() => Number)

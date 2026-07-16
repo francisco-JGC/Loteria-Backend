@@ -23,6 +23,8 @@ export interface ListTicketsInput {
   status?: TicketStatus;
   from?: Date;
   to?: Date;
+  /** "HH:MM" wall clock in Managua tz — filter to draws at this time. */
+  drawTime?: string;
   page: number;
   limit: number;
 }
@@ -64,6 +66,7 @@ export class ListTickets implements UseCase<ListTicketsInput, ListTicketsOutput>
       status: input.status,
       from: input.from,
       to: input.to,
+      drawTime: input.drawTime,
       limit: input.limit,
       offset: (input.page - 1) * input.limit,
     };

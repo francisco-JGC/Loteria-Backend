@@ -5,10 +5,12 @@ import {
   In,
   LessThanOrEqual,
   MoreThanOrEqual,
+  Raw,
   Repository,
 } from 'typeorm';
 import type { FindOptionsWhere } from 'typeorm';
 
+import { BUSINESS_TZ } from '../../../../../shared/domain/business-time';
 import type { Ticket } from '../../../domain/entities/ticket.entity';
 import type {
   FindTicketsFilters,
@@ -83,6 +85,15 @@ export class TypeOrmTicketsRepository implements TicketsRepository {
       where.createdAt = MoreThanOrEqual(filters.from);
     } else if (filters.to) {
       where.createdAt = LessThanOrEqual(filters.to);
+    }
+    if (filters.drawTime) {
+      // Match "wall-clock time in Managua" — same schedule (e.g. 11:00)
+      // across every day in the from/to range.
+      where.drawAt = Raw(
+        (alias) =>
+          `to_char(${alias} AT TIME ZONE '${BUSINESS_TZ}', 'HH24:MI') = :drawTime`,
+        { drawTime: filters.drawTime },
+      );
     }
     return where;
   }
