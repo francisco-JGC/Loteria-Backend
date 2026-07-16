@@ -46,6 +46,15 @@ export class CreateUser implements UseCase<CreateUserInput, UserOutput> {
       }
     }
 
+    // Domain invariant: only sellers are assigned to a sucursal via
+    // `users.salePointId`. Partners relate through `sale_points.ownerPartnerId`;
+    // admins operate globally. Reject up front so we don't get polluted rows.
+    if (input.role !== UserRole.SELLER && input.salePointId) {
+      throw new ValidationError(
+        'Solo los vendedores pueden tener una sucursal asignada',
+      );
+    }
+
     const existing = await this.users.findByUsername(input.username);
     if (existing) throw new ValidationError('Username already taken');
 
@@ -59,7 +68,8 @@ export class CreateUser implements UseCase<CreateUserInput, UserOutput> {
       address: input.address ?? null,
       nationalId: input.nationalId ?? null,
       paymentPercentage: input.paymentPercentage ?? null,
-      salePointId: input.salePointId ?? null,
+      salePointId:
+        input.role === UserRole.SELLER ? input.salePointId ?? null : null,
     });
     await this.users.save(user);
     return toUserOutput(user);

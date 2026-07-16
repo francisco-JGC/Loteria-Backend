@@ -1,7 +1,10 @@
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 
 import { UseCase } from '../../../../shared/application/use-case';
-import { NotFoundError } from '../../../../shared/domain/errors/domain.error';
+import {
+  NotFoundError,
+  ValidationError,
+} from '../../../../shared/domain/errors/domain.error';
 import { PartnerScopeService } from '../../../sale-points/application/services/partner-scope.service';
 import {
   USERS_REPOSITORY,
@@ -59,6 +62,24 @@ export class UpdateUser implements UseCase<UpdateUserInput, UserOutput> {
           'No puedes desasignar un vendedor de tu sucursal',
         );
       }
+    }
+
+    // Enforce the same invariant as CreateUser: non-sellers cannot have
+    // a salePointId. If the role transitions to non-seller we auto-clear
+    // salePointId; if the client tries to set salePointId non-null on a
+    // non-seller we reject explicitly.
+    const finalRole = input.role ?? user.role;
+    const finalSalePointId =
+      input.salePointId !== undefined ? input.salePointId : user.salePointId;
+    if (finalRole !== UserRole.SELLER && finalSalePointId !== null) {
+      if (input.salePointId !== undefined && input.salePointId !== null) {
+        throw new ValidationError(
+          'Solo los vendedores pueden tener una sucursal asignada',
+        );
+      }
+      // Role changed to non-seller and the existing salePointId is stale —
+      // clear it as part of this update.
+      input = { ...input, salePointId: null };
     }
 
     const patch: Parameters<typeof user.update>[0] = {
