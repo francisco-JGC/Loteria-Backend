@@ -9,8 +9,10 @@ import {
   Query,
 } from '@nestjs/common';
 
+import { CurrentUser } from '../../../../auth/infrastructure/http/decorators/current-user.decorator';
 import { Public } from '../../../../auth/infrastructure/http/decorators/public.decorator';
 import { Roles } from '../../../../auth/infrastructure/http/decorators/roles.decorator';
+import { type RequestUser } from '../../../../auth/infrastructure/strategies/jwt.strategy';
 import { BootstrapFirstAdmin } from '../../../application/use-cases/bootstrap-first-admin.use-case';
 import { CreateUser } from '../../../application/use-cases/create-user.use-case';
 import { FindUserById } from '../../../application/use-cases/find-user-by-id.use-case';
@@ -43,15 +45,27 @@ export class UsersController {
   }
 
   @Post()
-  @Roles(UserRole.ADMIN)
-  create(@Body() dto: CreateUserHttpDto): Promise<UserOutput> {
-    return this.createUser.execute(dto);
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  create(
+    @CurrentUser() user: RequestUser,
+    @Body() dto: CreateUserHttpDto,
+  ): Promise<UserOutput> {
+    return this.createUser.execute({
+      ...dto,
+      requesterId: user.id,
+      requesterRole: user.role,
+    });
   }
 
   @Get()
-  @Roles(UserRole.ADMIN)
-  list(@Query() query: ListUsersQueryDto): Promise<ListUsersOutput> {
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  list(
+    @CurrentUser() user: RequestUser,
+    @Query() query: ListUsersQueryDto,
+  ): Promise<ListUsersOutput> {
     return this.listUsers.execute({
+      requesterId: user.id,
+      requesterRole: user.role,
       role: query.role,
       search: query.search,
       limit: query.limit ?? 20,
@@ -60,17 +74,23 @@ export class UsersController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
   findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<UserOutput> {
     return this.findUserById.execute(id);
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
   update(
+    @CurrentUser() user: RequestUser,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateUserHttpDto,
   ): Promise<UserOutput> {
-    return this.updateUser.execute({ id, ...dto });
+    return this.updateUser.execute({
+      id,
+      ...dto,
+      requesterId: user.id,
+      requesterRole: user.role,
+    });
   }
 }

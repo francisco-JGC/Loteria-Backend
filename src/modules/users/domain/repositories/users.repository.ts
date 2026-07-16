@@ -6,6 +6,11 @@ export const USERS_REPOSITORY = Symbol('USERS_REPOSITORY');
 export interface FindUsersOptions {
   role?: UserRole;
   search?: string;
+  /**
+   * Restrict to users whose `sale_point_id` is in this set. Used for
+   * partner scoping. Empty array = no rows.
+   */
+  salePointIds?: string[];
   limit: number;
   offset: number;
 }

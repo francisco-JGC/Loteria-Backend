@@ -8,6 +8,7 @@ import {
   GAMES_REPOSITORY,
   type GamesRepository,
 } from '../../../games/domain/repositories/games.repository';
+import { PartnerScopeService } from '../../../sale-points/application/services/partner-scope.service';
 import { UserRole } from '../../../users/domain/value-objects/user-role';
 import { ListWinningTickets } from '../../../tickets/application/use-cases/list-winning-tickets.use-case';
 import type {
@@ -27,24 +28,61 @@ const MONTH_LABELS = [
 
 const POST_DRAW_GRACE_MINUTES = 3;
 
+export interface DashboardSummaryInput {
+  requesterId: string;
+  requesterRole: UserRole;
+}
+
+/** Scope of sale_points visible to the requester. `null` = no restriction. */
+type SalePointScope = string[] | null;
+
+const EMPTY_SUMMARY: DashboardSummaryOutput = {
+  billedToday: 0,
+  paidToday: 0,
+  profitToday: 0,
+  ticketsToday: 0,
+  averageTicketToday: 0,
+  billedYesterday: 0,
+  paidYesterday: 0,
+  profitYesterday: 0,
+  ticketsYesterday: 0,
+  weeklyBilled: 0,
+  weeklyBilledPrev: 0,
+  totalUsers: 0,
+  monthlySeries: [],
+  byGame: [],
+  todayDraws: [],
+  pendingPayouts: { count: 0, totalAmount: 0, items: [] },
+  topSellers: [],
+  topSalePoints: [],
+};
+
 /**
  * Aggregates the numbers powering the home dashboard.
  *
- * Everything is computed on the server: KPIs vs yesterday, monthly series,
- * per-game breakdown, today's draws with their live status, pending payouts
- * and rankings of sellers/sale points.
+ * Everything is scoped by the caller: admins see the whole operation, partners
+ * see only their sucursales, and no cross-partner leakage is possible because
+ * the scope is derived server-side from the JWT.
  */
 @Injectable()
 export class GetDashboardSummary
-  implements UseCase<void, DashboardSummaryOutput>
+  implements UseCase<DashboardSummaryInput, DashboardSummaryOutput>
 {
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
     @Inject(GAMES_REPOSITORY) private readonly games: GamesRepository,
     private readonly listWinningTickets: ListWinningTickets,
+    private readonly partnerScope: PartnerScopeService,
   ) {}
 
-  async execute(): Promise<DashboardSummaryOutput> {
+  async execute(input: DashboardSummaryInput): Promise<DashboardSummaryOutput> {
+    const scope = await this.partnerScope.getAccessibleSalePointIds(
+      input.requesterId,
+      input.requesterRole,
+    );
+    // Partner with zero sucursales → everything is zero, no need to query.
+    if (scope !== null && scope.length === 0) return EMPTY_SUMMARY;
+
     const [
       kpis,
       monthlySeries,
@@ -54,13 +92,13 @@ export class GetDashboardSummary
       topSellers,
       topSalePoints,
     ] = await Promise.all([
-      this.loadKpis(),
-      this.loadMonthlySeries(),
-      this.loadGameBreakdown(),
+      this.loadKpis(scope),
+      this.loadMonthlySeries(scope),
+      this.loadGameBreakdown(scope),
       this.loadTodayDraws(),
-      this.loadPendingPayouts(),
-      this.loadTopSellers(),
-      this.loadTopSalePoints(),
+      this.loadPendingPayouts(input),
+      this.loadTopSellers(scope),
+      this.loadTopSalePoints(scope),
     ]);
     return {
       ...kpis,
@@ -75,7 +113,7 @@ export class GetDashboardSummary
 
   // --- KPIs -----------------------------------------------------------------
 
-  private async loadKpis(): Promise<
+  private async loadKpis(scope: SalePointScope): Promise<
     Omit<
       DashboardSummaryOutput,
       | 'monthlySeries'
@@ -101,7 +139,8 @@ export class GetDashboardSummary
     >(
       // All "today" / "yesterday" boundaries are computed in BUSINESS_TZ so
       // the dashboard aligns with schedule cutoffs (which are also wall-clock
-      // in that zone).
+      // in that zone). `$2` is the partner scope: NULL means "no filter"
+      // (admin); a uuid[] restricts to the caller's sucursales.
       `
       SELECT
         COALESCE(SUM(CASE
@@ -140,10 +179,14 @@ export class GetDashboardSummary
                  (now() AT TIME ZONE $1)::date - 13 AND (now() AT TIME ZONE $1)::date - 7
           THEN t.total ELSE 0 END), 0)::bigint AS weekly_billed_prev,
 
-        (SELECT COUNT(*) FROM users)::bigint AS total_users
+        (
+          SELECT COUNT(*) FROM users u
+          WHERE $2::uuid[] IS NULL OR u.sale_point_id = ANY($2::uuid[])
+        )::bigint AS total_users
       FROM tickets t
+      WHERE $2::uuid[] IS NULL OR t.sale_point_id = ANY($2::uuid[])
       `,
-      [BUSINESS_TZ],
+      [BUSINESS_TZ, scope],
     );
     const row = rows[0];
     const billedToday = Number(row?.billed_today ?? 0);
@@ -170,9 +213,9 @@ export class GetDashboardSummary
 
   // --- Monthly series -------------------------------------------------------
 
-  private async loadMonthlySeries(): Promise<
-    DashboardSummaryOutput['monthlySeries']
-  > {
+  private async loadMonthlySeries(
+    scope: SalePointScope,
+  ): Promise<DashboardSummaryOutput['monthlySeries']> {
     const rows = await this.dataSource.query<
       Array<{ month_start: Date; billed: string; paid: string }>
     >(
@@ -189,18 +232,20 @@ export class GetDashboardSummary
           WHEN t.status = 'valid'
            AND (t.created_at AT TIME ZONE $1)::date >= m.month_start
            AND (t.created_at AT TIME ZONE $1)::date <  (m.month_start + INTERVAL '1 month')::date
+           AND ($3::uuid[] IS NULL OR t.sale_point_id = ANY($3::uuid[]))
           THEN t.total ELSE 0 END), 0)::bigint AS billed,
         COALESCE(SUM(CASE
           WHEN t.paid_at IS NOT NULL
            AND (t.paid_at AT TIME ZONE $1)::date >= m.month_start
            AND (t.paid_at AT TIME ZONE $1)::date <  (m.month_start + INTERVAL '1 month')::date
+           AND ($3::uuid[] IS NULL OR t.sale_point_id = ANY($3::uuid[]))
           THEN t.paid_prize ELSE 0 END), 0)::bigint AS paid
       FROM months m
       LEFT JOIN tickets t ON true
       GROUP BY m.month_start
       ORDER BY m.month_start ASC
       `,
-      [BUSINESS_TZ, MONTHS_IN_SERIES],
+      [BUSINESS_TZ, MONTHS_IN_SERIES, scope],
     );
 
     return rows.map((r) => {
@@ -217,9 +262,9 @@ export class GetDashboardSummary
 
   // --- By game --------------------------------------------------------------
 
-  private async loadGameBreakdown(): Promise<
-    DashboardSummaryOutput['byGame']
-  > {
+  private async loadGameBreakdown(
+    scope: SalePointScope,
+  ): Promise<DashboardSummaryOutput['byGame']> {
     const rows = await this.dataSource.query<
       Array<{ id: string; name: string; billed: string; paid: string }>
     >(
@@ -230,17 +275,19 @@ export class GetDashboardSummary
         COALESCE(SUM(CASE
           WHEN t.status = 'valid'
            AND (t.created_at AT TIME ZONE $1)::date >= (now() AT TIME ZONE $1)::date - 6
+           AND ($2::uuid[] IS NULL OR t.sale_point_id = ANY($2::uuid[]))
           THEN t.total ELSE 0 END), 0)::bigint AS billed,
         COALESCE(SUM(CASE
           WHEN t.paid_at IS NOT NULL
            AND (t.paid_at AT TIME ZONE $1)::date >= (now() AT TIME ZONE $1)::date - 6
+           AND ($2::uuid[] IS NULL OR t.sale_point_id = ANY($2::uuid[]))
           THEN t.paid_prize ELSE 0 END), 0)::bigint AS paid
       FROM games g
       LEFT JOIN tickets t ON t.game_id = g.id
       GROUP BY g.id, g.name, g.order_index
       ORDER BY g.order_index ASC
       `,
-      [BUSINESS_TZ],
+      [BUSINESS_TZ, scope],
     );
     return rows.map((r) => ({
       gameId: r.id,
@@ -252,11 +299,11 @@ export class GetDashboardSummary
 
   // --- Today draws ----------------------------------------------------------
 
+  /**
+   * Draws are a global lottery event — every partner (and every seller) uses
+   * the same schedules/results — so this stays unscoped.
+   */
   private async loadTodayDraws(): Promise<TodayDrawItem[]> {
-    // Everything runs in wall-clock time relative to BUSINESS_TZ so the DB's
-    // own timezone (UTC in prod, local in dev) can never distort the display.
-    // Schedules store "HH:MM" as-is; results are converted from timestamptz
-    // to Managua wall-clock and matched by string.
     const rows = await this.dataSource.query<
       Array<{
         game_id: string;
@@ -347,14 +394,15 @@ export class GetDashboardSummary
 
   // --- Pending payouts ------------------------------------------------------
 
-  private async loadPendingPayouts(): Promise<
-    DashboardSummaryOutput['pendingPayouts']
-  > {
+  private async loadPendingPayouts(
+    caller: DashboardSummaryInput,
+  ): Promise<DashboardSummaryOutput['pendingPayouts']> {
     // Reuse the shared evaluator so the matching rules stay in a single
-    // place — no duplicated three_digit "F" logic in SQL.
+    // place — no duplicated three_digit "F" logic in SQL. Passing the
+    // real caller lets ListWinningTickets apply partner scoping.
     const winners = await this.listWinningTickets.execute({
-      requesterId: '',
-      requesterRole: UserRole.ADMIN,
+      requesterId: caller.requesterId,
+      requesterRole: caller.requesterRole,
       from: new Date(Date.now() - 30 * 24 * 60 * 60_000),
       to: new Date(),
     });
@@ -370,7 +418,9 @@ export class GetDashboardSummary
     );
     const preview = unpaid.slice(0, 4);
     const gameIds = Array.from(new Set(preview.map((w) => w.ticket.gameId)));
-    const games = await Promise.all(gameIds.map((id) => this.games.findById(id)));
+    const games = await Promise.all(
+      gameIds.map((id) => this.games.findById(id)),
+    );
     const gameNameById = new Map<string, string>();
     for (const g of games) if (g) gameNameById.set(g.id, g.name);
 
@@ -389,7 +439,9 @@ export class GetDashboardSummary
 
   // --- Top sellers / sale points --------------------------------------------
 
-  private async loadTopSellers(): Promise<RankingItem[]> {
+  private async loadTopSellers(
+    scope: SalePointScope,
+  ): Promise<RankingItem[]> {
     const rows = await this.dataSource.query<
       Array<{ id: string; name: string; amount: string; ticket_count: string }>
     >(
@@ -404,13 +456,15 @@ export class GetDashboardSummary
         ON t.seller_id = u.id
        AND t.status = 'valid'
        AND (t.created_at AT TIME ZONE $1)::date = (now() AT TIME ZONE $1)::date
+       AND ($2::uuid[] IS NULL OR t.sale_point_id = ANY($2::uuid[]))
       WHERE u.role = 'seller'
+        AND ($2::uuid[] IS NULL OR u.sale_point_id = ANY($2::uuid[]))
       GROUP BY u.id, u.name
       HAVING COALESCE(SUM(t.total), 0) > 0
       ORDER BY amount DESC
       LIMIT 5
       `,
-      [BUSINESS_TZ],
+      [BUSINESS_TZ, scope],
     );
     return rows.map((r) => ({
       id: r.id,
@@ -420,7 +474,9 @@ export class GetDashboardSummary
     }));
   }
 
-  private async loadTopSalePoints(): Promise<RankingItem[]> {
+  private async loadTopSalePoints(
+    scope: SalePointScope,
+  ): Promise<RankingItem[]> {
     const rows = await this.dataSource.query<
       Array<{ id: string; name: string; amount: string; ticket_count: string }>
     >(
@@ -435,12 +491,13 @@ export class GetDashboardSummary
         ON t.sale_point_id = sp.id
        AND t.status = 'valid'
        AND (t.created_at AT TIME ZONE $1)::date = (now() AT TIME ZONE $1)::date
+      WHERE $2::uuid[] IS NULL OR sp.id = ANY($2::uuid[])
       GROUP BY sp.id, sp.name
       HAVING COALESCE(SUM(t.total), 0) > 0
       ORDER BY amount DESC
       LIMIT 5
       `,
-      [BUSINESS_TZ],
+      [BUSINESS_TZ, scope],
     );
     return rows.map((r) => ({
       id: r.id,

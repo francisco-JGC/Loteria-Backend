@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, type FindOptionsWhere, Repository } from 'typeorm';
+import { ILike, In, type FindOptionsWhere, Repository } from 'typeorm';
 
 import { User } from '../../../domain/entities/user.entity';
 import type {
@@ -32,9 +32,9 @@ export class TypeOrmUsersRepository implements UsersRepository {
   }
 
   async findMany(options: FindUsersOptions): Promise<User[]> {
-    const where = this.buildWhere(options);
+    if (options.salePointIds && options.salePointIds.length === 0) return [];
     const rows = await this.repo.find({
-      where,
+      where: this.buildWhere(options),
       order: { createdAt: 'DESC' },
       take: options.limit,
       skip: options.offset,
@@ -45,6 +45,9 @@ export class TypeOrmUsersRepository implements UsersRepository {
   count(
     options: Omit<FindUsersOptions, 'limit' | 'offset'>,
   ): Promise<number> {
+    if (options.salePointIds && options.salePointIds.length === 0) {
+      return Promise.resolve(0);
+    }
     return this.repo.count({
       where: this.buildWhere({ ...options, limit: 0, offset: 0 }),
     });
@@ -59,6 +62,9 @@ export class TypeOrmUsersRepository implements UsersRepository {
   ): FindOptionsWhere<UserOrmEntity> | FindOptionsWhere<UserOrmEntity>[] {
     const base: FindOptionsWhere<UserOrmEntity> = {};
     if (options.role) base.role = options.role;
+    if (options.salePointIds && options.salePointIds.length > 0) {
+      base.salePointId = In(options.salePointIds);
+    }
     const search = options.search?.trim();
     if (!search) return base;
     // Match on either username or display name, case-insensitive.

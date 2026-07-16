@@ -11,6 +11,7 @@ import {
   GAMES_REPOSITORY,
   type GamesRepository,
 } from '../../../games/domain/repositories/games.repository';
+import { PartnerScopeService } from '../../../sale-points/application/services/partner-scope.service';
 import { UserRole } from '../../../users/domain/value-objects/user-role';
 import {
   TICKETS_REPOSITORY,
@@ -49,6 +50,7 @@ export class ListWinningTickets
     @Inject(DRAW_RESULTS_REPOSITORY)
     private readonly results: DrawResultsRepository,
     private readonly evaluator: TicketEvaluator,
+    private readonly scope: PartnerScopeService,
   ) {}
 
   async execute(
@@ -59,9 +61,16 @@ export class ListWinningTickets
         ? input.requesterId
         : input.sellerId;
 
+    const partnerScope = await this.scope.getAccessibleSalePointIds(
+      input.requesterId,
+      input.requesterRole,
+    );
+    if (partnerScope !== null && partnerScope.length === 0) return [];
+
     const items = await this.tickets.findMany({
       sellerId: effectiveSellerId,
       salePointId: input.salePointId,
+      salePointIds: partnerScope ?? undefined,
       gameId: input.gameId,
       status: TicketStatus.VALID,
       from: input.from,

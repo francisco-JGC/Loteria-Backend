@@ -3,6 +3,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 import type { UseCase } from '../../../../shared/application/use-case';
+import { PartnerScopeService } from '../../../sale-points/application/services/partner-scope.service';
 import {
   USERS_REPOSITORY,
   type UsersRepository,
@@ -20,13 +21,23 @@ export interface GetTicketsSummaryInput {
   to?: Date;
 }
 
+const EMPTY_RESULT: TicketsSummaryOutput = {
+  ticketCount: 0,
+  voidedCount: 0,
+  paidCount: 0,
+  billed: 0,
+  paidPrize: 0,
+  salary: null,
+  paymentPercentage: null,
+};
+
 /**
  * Server-side SQL aggregation for the movements screen: returns billed +
  * paid-prize totals + counts for a set of tickets, without transporting
  * hundreds of rows to the client. Sellers can only see their own totals;
- * admins can filter by any seller. When the query is scoped to a single
- * seller, the commission (`salary`) is also computed here using that
- * user's `paymentPercentage` so the client never has to know the rate.
+ * partners are scoped to their sucursales; admins see everything. When the
+ * query is scoped to a single seller, the commission (`salary`) is also
+ * computed here using that user's `paymentPercentage`.
  */
 @Injectable()
 export class GetTicketsSummary
@@ -35,6 +46,7 @@ export class GetTicketsSummary
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
     @Inject(USERS_REPOSITORY) private readonly users: UsersRepository,
+    private readonly scope: PartnerScopeService,
   ) {}
 
   async execute(
@@ -46,6 +58,15 @@ export class GetTicketsSummary
       input.requesterRole === UserRole.SELLER
         ? input.requesterId
         : input.sellerId;
+
+    const partnerScope = await this.scope.getAccessibleSalePointIds(
+      input.requesterId,
+      input.requesterRole,
+    );
+    // Partner owns nothing → nothing to aggregate.
+    if (partnerScope !== null && partnerScope.length === 0) {
+      return EMPTY_RESULT;
+    }
 
     const rows = await this.dataSource.query<
       Array<{
@@ -69,6 +90,7 @@ export class GetTicketsSummary
         AND ($3::uuid IS NULL OR t.game_id       = $3::uuid)
         AND ($4::timestamptz IS NULL OR t.created_at >= $4::timestamptz)
         AND ($5::timestamptz IS NULL OR t.created_at <  $5::timestamptz)
+        AND ($6::uuid[] IS NULL OR t.sale_point_id = ANY($6::uuid[]))
       `,
       [
         effectiveSellerId ?? null,
@@ -76,6 +98,7 @@ export class GetTicketsSummary
         input.gameId ?? null,
         input.from ?? null,
         input.to ?? null,
+        partnerScope,
       ],
     );
 
@@ -87,7 +110,10 @@ export class GetTicketsSummary
     let paymentPercentage: number | null = null;
     if (effectiveSellerId) {
       const seller = await this.users.findById(effectiveSellerId);
-      if (seller?.paymentPercentage !== null && seller?.paymentPercentage !== undefined) {
+      if (
+        seller?.paymentPercentage !== null &&
+        seller?.paymentPercentage !== undefined
+      ) {
         paymentPercentage = seller.paymentPercentage;
         salary = Math.round((billed * paymentPercentage) / 100);
       }

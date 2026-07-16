@@ -3,6 +3,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 import type { UseCase } from '../../../../shared/application/use-case';
+import { PartnerScopeService } from '../../../sale-points/application/services/partner-scope.service';
 import { UserRole } from '../../../users/domain/value-objects/user-role';
 import type {
   TicketsByDrawItem,
@@ -25,7 +26,8 @@ export interface GetTicketsByDrawInput {
  * how much was billed, how many tickets were sold, and (if the result is
  * already registered) the winning number.
  *
- * Sellers can only see their own totals; admins can filter by any seller.
+ * Sellers can only see their own totals; partners are limited to their
+ * sucursales; admins can filter by any seller.
  */
 @Injectable()
 export class GetTicketsByDraw
@@ -33,6 +35,7 @@ export class GetTicketsByDraw
 {
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
+    private readonly scope: PartnerScopeService,
   ) {}
 
   async execute(
@@ -44,6 +47,12 @@ export class GetTicketsByDraw
       input.requesterRole === UserRole.SELLER
         ? input.requesterId
         : input.sellerId;
+
+    const partnerScope = await this.scope.getAccessibleSalePointIds(
+      input.requesterId,
+      input.requesterRole,
+    );
+    if (partnerScope !== null && partnerScope.length === 0) return [];
 
     const rows = await this.dataSource.query<
       Array<{
@@ -75,6 +84,7 @@ export class GetTicketsByDraw
         AND ($3::uuid IS NULL OR t.game_id       = $3::uuid)
         AND ($4::timestamptz IS NULL OR t.created_at >= $4::timestamptz)
         AND ($5::timestamptz IS NULL OR t.created_at <  $5::timestamptz)
+        AND ($6::uuid[] IS NULL OR t.sale_point_id = ANY($6::uuid[]))
       GROUP BY t.game_id, t.draw_at, dr.winning_number
       ORDER BY t.draw_at DESC
       `,
@@ -84,6 +94,7 @@ export class GetTicketsByDraw
         input.gameId ?? null,
         input.from ?? null,
         input.to ?? null,
+        partnerScope,
       ],
     );
 

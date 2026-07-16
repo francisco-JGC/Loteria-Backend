@@ -12,4 +12,7 @@ export interface UpdateUserInput {
   nationalId?: string | null;
   paymentPercentage?: number | null;
   salePointId?: string | null;
+  /** Auth context — set by the controller from the JWT. */
+  requesterId: string;
+  requesterRole: UserRole;
 }

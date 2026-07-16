@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { UsersModule } from '../users/users.module';
@@ -13,7 +13,10 @@ import { SalePointOrmEntity } from './infrastructure/persistence/entities/sale-p
 import { TypeOrmSalePointsRepository } from './infrastructure/persistence/repositories/typeorm-sale-points.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SalePointOrmEntity]), UsersModule],
+  imports: [
+    TypeOrmModule.forFeature([SalePointOrmEntity]),
+    forwardRef(() => UsersModule),
+  ],
   controllers: [SalePointsController],
   providers: [
     { provide: SALE_POINTS_REPOSITORY, useClass: TypeOrmSalePointsRepository },

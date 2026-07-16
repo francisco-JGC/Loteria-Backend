@@ -24,9 +24,13 @@ export class BootstrapFirstAdmin implements UseCase<BootstrapFirstAdminInput, Us
     if (total > 0) {
       throw new ForbiddenException('Bootstrap already completed');
     }
+    // Bootstrap runs before any user exists, so there is no real
+    // requester. Impersonate an admin to satisfy CreateUser's contract.
     return this.createUser.execute({
       ...input,
       role: UserRole.ADMIN,
+      requesterId: '00000000-0000-0000-0000-000000000000',
+      requesterRole: UserRole.ADMIN,
     });
   }
 }

@@ -1,11 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 
 import { UseCase } from '../../../../shared/application/use-case';
 import { NotFoundError } from '../../../../shared/domain/errors/domain.error';
+import { PartnerScopeService } from '../../../sale-points/application/services/partner-scope.service';
 import {
   USERS_REPOSITORY,
   type UsersRepository,
 } from '../../domain/repositories/users.repository';
+import { UserRole } from '../../domain/value-objects/user-role';
 import {
   PASSWORD_HASHER,
   type PasswordHasher,
@@ -18,11 +20,46 @@ export class UpdateUser implements UseCase<UpdateUserInput, UserOutput> {
   constructor(
     @Inject(USERS_REPOSITORY) private readonly users: UsersRepository,
     @Inject(PASSWORD_HASHER) private readonly hasher: PasswordHasher,
+    private readonly scope: PartnerScopeService,
   ) {}
 
   async execute(input: UpdateUserInput): Promise<UserOutput> {
     const user = await this.users.findById(input.id);
     if (!user) throw new NotFoundError('User', input.id);
+
+    // Partner constraints: can only touch users assigned to one of their
+    // sucursales, can't promote anyone to admin/partner, and can't move a
+    // user out of their scope.
+    if (input.requesterRole === UserRole.PARTNER) {
+      const owned = await this.scope.getAccessibleSalePointIds(
+        input.requesterId,
+        input.requesterRole,
+      );
+      const ownsCurrent =
+        user.salePointId !== null && (owned ?? []).includes(user.salePointId);
+      if (!ownsCurrent) {
+        throw new ForbiddenException(
+          'No puedes modificar usuarios fuera de tus sucursales',
+        );
+      }
+      if (input.role !== undefined && input.role !== UserRole.SELLER) {
+        throw new ForbiddenException(
+          'Un socio solo puede asignar el rol vendedor',
+        );
+      }
+      if (input.salePointId !== undefined && input.salePointId !== null) {
+        if (!(owned ?? []).includes(input.salePointId)) {
+          throw new ForbiddenException(
+            'Esa sucursal no te pertenece',
+          );
+        }
+      }
+      if (input.salePointId === null) {
+        throw new ForbiddenException(
+          'No puedes desasignar un vendedor de tu sucursal',
+        );
+      }
+    }
 
     const patch: Parameters<typeof user.update>[0] = {
       name: input.name,
