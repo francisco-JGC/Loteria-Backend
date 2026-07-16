@@ -1,6 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import type { UseCase } from '../../../../shared/application/use-case';
+import type { DrawResult } from '../../../games/domain/entities/draw-result.entity';
+import type { Game } from '../../../games/domain/entities/game.entity';
+import {
+  DRAW_RESULTS_REPOSITORY,
+  type DrawResultsRepository,
+} from '../../../games/domain/repositories/draw-results.repository';
+import {
+  GAMES_REPOSITORY,
+  type GamesRepository,
+} from '../../../games/domain/repositories/games.repository';
 import { UserRole } from '../../../users/domain/value-objects/user-role';
 import {
   TICKETS_REPOSITORY,
@@ -35,6 +45,9 @@ export class ListWinningTickets
 {
   constructor(
     @Inject(TICKETS_REPOSITORY) private readonly tickets: TicketsRepository,
+    @Inject(GAMES_REPOSITORY) private readonly games: GamesRepository,
+    @Inject(DRAW_RESULTS_REPOSITORY)
+    private readonly results: DrawResultsRepository,
     private readonly evaluator: TicketEvaluator,
   ) {}
 
@@ -56,10 +69,37 @@ export class ListWinningTickets
       limit: 1000,
       offset: 0,
     });
+    if (items.length === 0) return [];
+
+    // Bulk-load games + draw_results ONCE instead of per-ticket. Previous
+    // implementation did 2N sequential DB roundtrips inside the evaluator,
+    // which timed out (>15s) as soon as the range held a few hundred tickets.
+    const games = await this.games.findAll({ onlyActive: false });
+    const gamesById = new Map<string, Game>();
+    for (const g of games) gamesById.set(g.id, g);
+
+    let minDraw = items[0].drawAt.getTime();
+    let maxDraw = minDraw;
+    for (const t of items) {
+      const ms = t.drawAt.getTime();
+      if (ms < minDraw) minDraw = ms;
+      if (ms > maxDraw) maxDraw = ms;
+    }
+    const drawResults = await this.results.findMany({
+      from: new Date(minDraw),
+      to: new Date(maxDraw),
+    });
+    const resultsByKey = new Map<string, DrawResult>();
+    for (const r of drawResults) {
+      resultsByKey.set(this.resultKey(r.gameId, r.drawAt), r);
+    }
 
     const winners: WinningTicketOutput[] = [];
     for (const ticket of items) {
-      const evaluation = await this.evaluator.evaluate(ticket);
+      const game = gamesById.get(ticket.gameId) ?? null;
+      const key = this.resultKey(ticket.gameId, ticket.drawAt);
+      const result = resultsByKey.get(key) ?? null;
+      const evaluation = this.evaluator.evaluateWith(ticket, game, result);
       if (!evaluation.isWinner) continue;
       winners.push({
         ticket: toTicketOutput(ticket),
@@ -68,5 +108,9 @@ export class ListWinningTickets
       });
     }
     return winners;
+  }
+
+  private resultKey(gameId: string, drawAt: Date): string {
+    return `${gameId}::${drawAt.getTime()}`;
   }
 }

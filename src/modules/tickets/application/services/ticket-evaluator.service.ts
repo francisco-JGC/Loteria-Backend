@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import type { DrawResult } from '../../../games/domain/entities/draw-result.entity';
+import type { Game } from '../../../games/domain/entities/game.entity';
 import {
   DRAW_RESULTS_REPOSITORY,
   type DrawResultsRepository,
@@ -41,16 +43,27 @@ export class TicketEvaluator {
 
   async evaluate(ticket: Ticket): Promise<TicketEvaluation> {
     const game = await this.games.findById(ticket.gameId);
+    const result = game
+      ? await this.results.findByGameAndDraw(ticket.gameId, ticket.drawAt)
+      : null;
+    return this.evaluateWith(ticket, game, result);
+  }
+
+  /**
+   * Synchronous variant of `evaluate` that takes pre-resolved dependencies.
+   * Use this when scoring a batch of tickets to avoid N+1 database queries:
+   * fetch games/results in bulk once, then call this per ticket.
+   */
+  evaluateWith(
+    ticket: Ticket,
+    game: Game | null,
+    result: DrawResult | null,
+  ): TicketEvaluation {
     if (!game || game.type === GameType.MULTI_SORTEO) {
       // Tickets are never created against MULTI_SORTEO games anymore.
       // If we ever encounter one, treat it as pending.
       return this.pending(ticket);
     }
-
-    const result = await this.results.findByGameAndDraw(
-      ticket.gameId,
-      ticket.drawAt,
-    );
     if (!result) return this.pending(ticket);
 
     const lines = ticket.lines.map((line) =>
