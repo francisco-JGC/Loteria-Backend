@@ -31,6 +31,12 @@ export class TypeOrmUsersRepository implements UsersRepository {
     return found ? UserMapper.toDomain(found) : null;
   }
 
+  async findByIds(ids: string[]): Promise<User[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.repo.find({ where: { id: In(ids) } });
+    return rows.map(UserMapper.toDomain);
+  }
+
   async findMany(options: FindUsersOptions): Promise<User[]> {
     if (options.salePointIds && options.salePointIds.length === 0) return [];
     const rows = await this.repo.find({
@@ -65,6 +71,7 @@ export class TypeOrmUsersRepository implements UsersRepository {
     if (options.salePointIds && options.salePointIds.length > 0) {
       base.salePointId = In(options.salePointIds);
     }
+    if (options.createdById) base.createdById = options.createdById;
     const search = options.search?.trim();
     if (!search) return base;
     // Match on either username or display name, case-insensitive.

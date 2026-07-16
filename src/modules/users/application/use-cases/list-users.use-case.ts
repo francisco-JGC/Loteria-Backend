@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import type { UseCase } from '../../../../shared/application/use-case';
-import { PartnerScopeService } from '../../../sale-points/application/services/partner-scope.service';
 import {
   USERS_REPOSITORY,
   type UsersRepository,
@@ -29,30 +28,20 @@ export interface ListUsersOutput {
 export class ListUsers implements UseCase<ListUsersInput, ListUsersOutput> {
   constructor(
     @Inject(USERS_REPOSITORY) private readonly users: UsersRepository,
-    private readonly scope: PartnerScopeService,
   ) {}
 
   async execute(input: ListUsersInput): Promise<ListUsersOutput> {
-    // Partner scoping: a partner only sees users assigned to sucursales
-    // they own. Admin sees all. The scope is derived from the caller,
-    // never from client input.
-    const partnerScope = await this.scope.getAccessibleSalePointIds(
-      input.requesterId,
-      input.requesterRole,
-    );
-    if (partnerScope !== null && partnerScope.length === 0) {
-      return {
-        items: [],
-        total: 0,
-        limit: input.limit,
-        offset: input.offset,
-      };
-    }
+    // Partner scoping: partners see only users they created themselves.
+    // Admin sees everyone. Sellers never reach this endpoint (role-gated).
+    const createdById =
+      input.requesterRole === UserRole.PARTNER
+        ? input.requesterId
+        : undefined;
 
     const filters = {
       role: input.role,
       search: input.search,
-      salePointIds: partnerScope ?? undefined,
+      createdById,
       limit: input.limit,
       offset: input.offset,
     };
@@ -62,11 +51,25 @@ export class ListUsers implements UseCase<ListUsersInput, ListUsersOutput> {
       this.users.count({
         role: input.role,
         search: input.search,
-        salePointIds: partnerScope ?? undefined,
+        createdById,
       }),
     ]);
+
+    // Bulk-resolve creator names to avoid N+1 in the "Creado por" column.
+    const creatorIds = Array.from(
+      new Set(
+        items
+          .map((u) => u.createdById)
+          .filter((id): id is string => id !== null),
+      ),
+    );
+    const creators = await this.users.findByIds(creatorIds);
+    const creatorNameById = new Map(creators.map((c) => [c.id, c.name]));
+
     return {
-      items: items.map(toUserOutput),
+      items: items.map((u) =>
+        toUserOutput(u, u.createdById ? creatorNameById.get(u.createdById) ?? null : null),
+      ),
       total,
       limit: input.limit,
       offset: input.offset,

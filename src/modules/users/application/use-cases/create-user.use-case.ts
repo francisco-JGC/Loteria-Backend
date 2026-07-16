@@ -59,6 +59,13 @@ export class CreateUser implements UseCase<CreateUserInput, UserOutput> {
     if (existing) throw new ValidationError('Username already taken');
 
     const hashed = await this.hasher.hash(input.password);
+    // The bootstrap admin path passes a nil UUID as requesterId to signify
+    // "no creator" — store null in that case so the FK stays clean.
+    const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+    const createdById =
+      input.requesterId && input.requesterId !== NIL_UUID
+        ? input.requesterId
+        : null;
     const user = User.create({
       username: input.username,
       hashedPassword: hashed,
@@ -70,6 +77,7 @@ export class CreateUser implements UseCase<CreateUserInput, UserOutput> {
       paymentPercentage: input.paymentPercentage ?? null,
       salePointId:
         input.role === UserRole.SELLER ? input.salePointId ?? null : null,
+      createdById,
     });
     await this.users.save(user);
     return toUserOutput(user);

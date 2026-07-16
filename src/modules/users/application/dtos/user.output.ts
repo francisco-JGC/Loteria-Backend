@@ -12,11 +12,16 @@ export interface UserOutput {
   nationalId: string | null;
   paymentPercentage: number | null;
   salePointId: string | null;
+  createdById: string | null;
+  createdByName: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export const toUserOutput = (user: User): UserOutput => ({
+export const toUserOutput = (
+  user: User,
+  createdByName: string | null = null,
+): UserOutput => ({
   id: user.id,
   username: user.username,
   name: user.name,
@@ -27,6 +32,8 @@ export const toUserOutput = (user: User): UserOutput => ({
   nationalId: user.nationalId,
   paymentPercentage: user.paymentPercentage,
   salePointId: user.salePointId,
+  createdById: user.createdById,
+  createdByName,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });

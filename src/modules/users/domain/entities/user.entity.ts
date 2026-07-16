@@ -14,6 +14,7 @@ export interface UserProps {
   nationalId: string | null;
   paymentPercentage: number | null;
   salePointId: string | null;
+  createdById: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,6 +34,7 @@ export class User extends AggregateRoot<UserProps> {
     nationalId?: string | null;
     paymentPercentage?: number | null;
     salePointId?: string | null;
+    createdById?: string | null;
   }): User {
     const now = new Date();
     return new User(randomUUID(), {
@@ -46,6 +48,7 @@ export class User extends AggregateRoot<UserProps> {
       nationalId: input.nationalId ?? null,
       paymentPercentage: input.paymentPercentage ?? null,
       salePointId: input.salePointId ?? null,
+      createdById: input.createdById ?? null,
       createdAt: now,
       updatedAt: now,
     });
@@ -120,6 +123,10 @@ export class User extends AggregateRoot<UserProps> {
 
   get salePointId(): string | null {
     return this.props.salePointId;
+  }
+
+  get createdById(): string | null {
+    return this.props.createdById;
   }
 
   get createdAt(): Date {

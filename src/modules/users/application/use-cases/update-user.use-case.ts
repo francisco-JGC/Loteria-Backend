@@ -30,19 +30,13 @@ export class UpdateUser implements UseCase<UpdateUserInput, UserOutput> {
     const user = await this.users.findById(input.id);
     if (!user) throw new NotFoundError('User', input.id);
 
-    // Partner constraints: can only touch users assigned to one of their
-    // sucursales, can't promote anyone to admin/partner, and can't move a
-    // user out of their scope.
+    // Partner constraints: a partner can only edit users they themselves
+    // created, cannot change their role away from seller, and if they
+    // reassign the sucursal it must land within their own owned sucursales.
     if (input.requesterRole === UserRole.PARTNER) {
-      const owned = await this.scope.getAccessibleSalePointIds(
-        input.requesterId,
-        input.requesterRole,
-      );
-      const ownsCurrent =
-        user.salePointId !== null && (owned ?? []).includes(user.salePointId);
-      if (!ownsCurrent) {
+      if (user.createdById !== input.requesterId) {
         throw new ForbiddenException(
-          'No puedes modificar usuarios fuera de tus sucursales',
+          'Solo puedes modificar usuarios que tú creaste',
         );
       }
       if (input.role !== undefined && input.role !== UserRole.SELLER) {
@@ -51,10 +45,12 @@ export class UpdateUser implements UseCase<UpdateUserInput, UserOutput> {
         );
       }
       if (input.salePointId !== undefined && input.salePointId !== null) {
+        const owned = await this.scope.getAccessibleSalePointIds(
+          input.requesterId,
+          input.requesterRole,
+        );
         if (!(owned ?? []).includes(input.salePointId)) {
-          throw new ForbiddenException(
-            'Esa sucursal no te pertenece',
-          );
+          throw new ForbiddenException('Esa sucursal no te pertenece');
         }
       }
       if (input.salePointId === null) {

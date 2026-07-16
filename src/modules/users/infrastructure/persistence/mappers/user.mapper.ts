@@ -14,6 +14,7 @@ export class UserMapper {
       nationalId: orm.nationalId ?? null,
       paymentPercentage: orm.paymentPercentage ?? null,
       salePointId: orm.salePointId ?? null,
+      createdById: orm.createdById ?? null,
       createdAt: orm.createdAt,
       updatedAt: orm.updatedAt,
     });
@@ -32,6 +33,7 @@ export class UserMapper {
     entity.nationalId = user.nationalId;
     entity.paymentPercentage = user.paymentPercentage;
     entity.salePointId = user.salePointId;
+    entity.createdById = user.createdById;
     entity.createdAt = user.createdAt;
     entity.updatedAt = user.updatedAt;
     return entity;

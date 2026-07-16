@@ -53,6 +53,10 @@ export class UserOrmEntity {
   @JoinColumn({ name: 'sale_point_id' })
   salePoint?: SalePointOrmEntity | null;
 
+  @Index()
+  @Column({ type: 'uuid', name: 'created_by_id', nullable: true })
+  createdById!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
