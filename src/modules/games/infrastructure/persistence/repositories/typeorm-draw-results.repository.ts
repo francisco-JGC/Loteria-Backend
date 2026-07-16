@@ -36,31 +36,79 @@ export class TypeOrmDrawResultsRepository implements DrawResultsRepository {
   }
 
   async findMany(filters: DrawResultsFilters): Promise<DrawResult[]> {
-    // Join with `games` so we can sort by (day desc, game.order_index asc,
-    // time asc) — that's what web + mobile "últimos resultados" render:
-    // all Diaria draws together, then Juega 3, etc., grouped by day.
-    // The day boundary is computed in BUSINESS_TZ so a late-evening draw
-    // in Managua doesn't spill into the next UTC bucket.
-    const qb = this.repo
-      .createQueryBuilder('dr')
-      .innerJoin('games', 'g', 'g.id = dr.game_id');
+    // Raw SQL so we can:
+    //   1) sort by (day desc in BUSINESS_TZ, game.order_index asc, drawAt asc)
+    //      — grouping all Diaria draws together, then Juega 3, etc.
+    //   2) avoid TypeORM's fragile placeholder handling inside ORDER BY.
+    const conditions: string[] = [];
+    const params: unknown[] = [];
     if (filters.gameId) {
-      qb.andWhere('dr.game_id = :gameId', { gameId: filters.gameId });
+      params.push(filters.gameId);
+      conditions.push(`dr.game_id = $${params.length}::uuid`);
     }
     if (filters.from) {
-      qb.andWhere('dr.draw_at >= :from', { from: filters.from });
+      params.push(filters.from);
+      conditions.push(`dr.draw_at >= $${params.length}::timestamptz`);
     }
     if (filters.to) {
-      qb.andWhere('dr.draw_at <= :to', { to: filters.to });
+      params.push(filters.to);
+      conditions.push(`dr.draw_at <= $${params.length}::timestamptz`);
     }
-    qb.orderBy(`(dr.draw_at AT TIME ZONE :tz)::date`, 'DESC')
-      .addOrderBy('g.order_index', 'ASC')
-      .addOrderBy('dr.draw_at', 'ASC')
-      .setParameter('tz', BUSINESS_TZ);
-    if (filters.limit) qb.take(filters.limit);
-    if (filters.offset) qb.skip(filters.offset);
-    const rows = await qb.getMany();
-    return rows.map((row) => DrawResultMapper.toDomain(row));
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    let limitClause = '';
+    if (filters.limit !== undefined) {
+      params.push(filters.limit);
+      limitClause = ` LIMIT $${params.length}`;
+    }
+    let offsetClause = '';
+    if (filters.offset !== undefined) {
+      params.push(filters.offset);
+      offsetClause = ` OFFSET $${params.length}`;
+    }
+
+    const rows = await this.repo.query<
+      Array<{
+        id: string;
+        game_id: string;
+        draw_at: Date;
+        winning_number: string;
+        recorded_by_id: string;
+        created_at: Date;
+        updated_at: Date;
+      }>
+    >(
+      `
+      SELECT
+        dr.id,
+        dr.game_id,
+        dr.draw_at,
+        dr.winning_number,
+        dr.recorded_by_id,
+        dr.created_at,
+        dr.updated_at
+      FROM draw_results dr
+      INNER JOIN games g ON g.id = dr.game_id
+      ${where}
+      ORDER BY (dr.draw_at AT TIME ZONE '${BUSINESS_TZ}')::date DESC,
+               g.order_index ASC,
+               dr.draw_at ASC
+      ${limitClause}${offsetClause}
+      `,
+      params,
+    );
+
+    return rows.map((row) =>
+      DrawResultMapper.toDomain({
+        id: row.id,
+        gameId: row.game_id,
+        drawAt: row.draw_at,
+        winningNumber: row.winning_number,
+        recordedById: row.recorded_by_id,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      } as DrawResultOrmEntity),
+    );
   }
 
   async delete(id: string): Promise<void> {
