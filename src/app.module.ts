@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { GamesModule } from './modules/games/games.module';
 import { LuckyModule } from './modules/lucky/lucky.module';
+import { MovementsModule } from './modules/movements/movements.module';
 import { SalePointsModule } from './modules/sale-points/sale-points.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
 import { UsersModule } from './modules/users/users.module';
@@ -31,6 +32,7 @@ import { DatabaseModule } from './shared/infrastructure/persistence/database.mod
     TicketsModule,
     LuckyModule,
     DashboardModule,
+    MovementsModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: DomainExceptionFilter }],
 })
