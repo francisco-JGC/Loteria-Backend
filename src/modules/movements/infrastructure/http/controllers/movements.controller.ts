@@ -14,14 +14,17 @@ import { Roles } from '../../../../auth/infrastructure/http/decorators/roles.dec
 import type { RequestUser } from '../../../../auth/infrastructure/strategies/jwt.strategy';
 import { UserRole } from '../../../../users/domain/value-objects/user-role';
 import type { MovementOutput } from '../../../application/dtos/movement.output';
+import type { MovementsBalanceOutput } from '../../../application/dtos/movements-balance.output';
 import { CreateMovement } from '../../../application/use-cases/create-movement.use-case';
 import { DeleteMovement } from '../../../application/use-cases/delete-movement.use-case';
+import { GetMovementsBalance } from '../../../application/use-cases/get-movements-balance.use-case';
 import {
   ListMovements,
   type ListMovementsOutput,
 } from '../../../application/use-cases/list-movements.use-case';
 import { CreateMovementHttpDto } from '../dtos/create-movement-http.dto';
 import { ListMovementsQueryDto } from '../dtos/list-movements-query.dto';
+import { MovementsBalanceQueryDto } from '../dtos/movements-balance-query.dto';
 
 @Controller('movements')
 @Roles(UserRole.ADMIN, UserRole.PARTNER)
@@ -30,6 +33,7 @@ export class MovementsController {
     private readonly createMovement: CreateMovement,
     private readonly listMovements: ListMovements,
     private readonly deleteMovement: DeleteMovement,
+    private readonly getMovementsBalance: GetMovementsBalance,
   ) {}
 
   @Post()
@@ -45,6 +49,20 @@ export class MovementsController {
       amount: dto.amount,
       description: dto.description,
       occurredAt: dto.occurredAt ? new Date(dto.occurredAt) : undefined,
+    });
+  }
+
+  @Get('balance')
+  balance(
+    @CurrentUser() user: RequestUser,
+    @Query() query: MovementsBalanceQueryDto,
+  ): Promise<MovementsBalanceOutput> {
+    return this.getMovementsBalance.execute({
+      requesterId: user.id,
+      requesterRole: user.role,
+      salePointId: query.salePointId,
+      from: query.from ? new Date(query.from) : undefined,
+      to: query.to ? new Date(query.to) : undefined,
     });
   }
 
