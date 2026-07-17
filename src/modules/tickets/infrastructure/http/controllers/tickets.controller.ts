@@ -9,15 +9,19 @@ import {
 } from '@nestjs/common';
 
 import { CurrentUser } from '../../../../auth/infrastructure/http/decorators/current-user.decorator';
+import { Roles } from '../../../../auth/infrastructure/http/decorators/roles.decorator';
 import type { RequestUser } from '../../../../auth/infrastructure/strategies/jwt.strategy';
+import { UserRole } from '../../../../users/domain/value-objects/user-role';
 import { CreateTicket } from '../../../application/use-cases/create-ticket.use-case';
 import { FindTicketByFolio } from '../../../application/use-cases/find-ticket-by-folio.use-case';
 import { FindTicketById } from '../../../application/use-cases/find-ticket-by-id.use-case';
+import { GetBranchTotals } from '../../../application/use-cases/get-branch-totals.use-case';
 import { GetSellerReport } from '../../../application/use-cases/get-seller-report.use-case';
 import { GetTicketsByDraw } from '../../../application/use-cases/get-tickets-by-draw.use-case';
 import { GetTicketsSummary } from '../../../application/use-cases/get-tickets-summary.use-case';
 import { ListTickets } from '../../../application/use-cases/list-tickets.use-case';
 import type { ListTicketsOutput } from '../../../application/use-cases/list-tickets.use-case';
+import type { BranchTotalsOutput } from '../../../application/dtos/branch-totals.output';
 import type { SellerReportOutput } from '../../../application/dtos/seller-report.output';
 import type { TicketsByDrawOutput } from '../../../application/dtos/tickets-by-draw.output';
 import type { TicketsSummaryOutput } from '../../../application/dtos/tickets-summary.output';
@@ -36,6 +40,7 @@ import {
   type EvaluateTicketByIdOutput,
 } from '../../../application/use-cases/evaluate-ticket-by-id.use-case';
 import { MarkTicketPaid } from '../../../application/use-cases/mark-ticket-paid.use-case';
+import { BranchTotalsQueryDto } from '../dtos/branch-totals-query.dto';
 import { ListWinnersQueryDto } from '../dtos/list-winners-query.dto';
 import { SellerReportQueryDto } from '../dtos/seller-report-query.dto';
 import { VoidTicketHttpDto } from '../dtos/void-ticket-http.dto';
@@ -54,6 +59,7 @@ export class TicketsController {
     private readonly evaluateTicketById: EvaluateTicketById,
     private readonly markTicketPaid: MarkTicketPaid,
     private readonly getSellerReport: GetSellerReport,
+    private readonly getBranchTotals: GetBranchTotals,
   ) {}
 
   @Post()
@@ -102,6 +108,21 @@ export class TicketsController {
       salePointId: query.salePointId,
       gameId: query.gameId,
       sellerId: query.sellerId,
+      from: query.from ? new Date(query.from) : undefined,
+      to: query.to ? new Date(query.to) : undefined,
+    });
+  }
+
+  @Get('branch-totals')
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  branchTotals(
+    @CurrentUser() user: RequestUser,
+    @Query() query: BranchTotalsQueryDto,
+  ): Promise<BranchTotalsOutput> {
+    return this.getBranchTotals.execute({
+      requesterId: user.id,
+      requesterRole: user.role,
+      gameId: query.gameId,
       from: query.from ? new Date(query.from) : undefined,
       to: query.to ? new Date(query.to) : undefined,
     });
