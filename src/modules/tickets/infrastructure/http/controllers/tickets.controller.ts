@@ -13,10 +13,12 @@ import type { RequestUser } from '../../../../auth/infrastructure/strategies/jwt
 import { CreateTicket } from '../../../application/use-cases/create-ticket.use-case';
 import { FindTicketByFolio } from '../../../application/use-cases/find-ticket-by-folio.use-case';
 import { FindTicketById } from '../../../application/use-cases/find-ticket-by-id.use-case';
+import { GetSellerReport } from '../../../application/use-cases/get-seller-report.use-case';
 import { GetTicketsByDraw } from '../../../application/use-cases/get-tickets-by-draw.use-case';
 import { GetTicketsSummary } from '../../../application/use-cases/get-tickets-summary.use-case';
 import { ListTickets } from '../../../application/use-cases/list-tickets.use-case';
 import type { ListTicketsOutput } from '../../../application/use-cases/list-tickets.use-case';
+import type { SellerReportOutput } from '../../../application/dtos/seller-report.output';
 import type { TicketsByDrawOutput } from '../../../application/dtos/tickets-by-draw.output';
 import type { TicketsSummaryOutput } from '../../../application/dtos/tickets-summary.output';
 import {
@@ -35,6 +37,7 @@ import {
 } from '../../../application/use-cases/evaluate-ticket-by-id.use-case';
 import { MarkTicketPaid } from '../../../application/use-cases/mark-ticket-paid.use-case';
 import { ListWinnersQueryDto } from '../dtos/list-winners-query.dto';
+import { SellerReportQueryDto } from '../dtos/seller-report-query.dto';
 import { VoidTicketHttpDto } from '../dtos/void-ticket-http.dto';
 
 @Controller('tickets')
@@ -50,6 +53,7 @@ export class TicketsController {
     private readonly listWinningTickets: ListWinningTickets,
     private readonly evaluateTicketById: EvaluateTicketById,
     private readonly markTicketPaid: MarkTicketPaid,
+    private readonly getSellerReport: GetSellerReport,
   ) {}
 
   @Post()
@@ -97,6 +101,21 @@ export class TicketsController {
       requesterRole: user.role,
       salePointId: query.salePointId,
       gameId: query.gameId,
+      sellerId: query.sellerId,
+      from: query.from ? new Date(query.from) : undefined,
+      to: query.to ? new Date(query.to) : undefined,
+    });
+  }
+
+  @Get('seller-report')
+  sellerReport(
+    @CurrentUser() user: RequestUser,
+    @Query() query: SellerReportQueryDto,
+  ): Promise<SellerReportOutput> {
+    return this.getSellerReport.execute({
+      requesterId: user.id,
+      requesterRole: user.role,
+      salePointId: query.salePointId,
       sellerId: query.sellerId,
       from: query.from ? new Date(query.from) : undefined,
       to: query.to ? new Date(query.to) : undefined,
