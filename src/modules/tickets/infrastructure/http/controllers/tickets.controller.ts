@@ -15,12 +15,14 @@ import { UserRole } from '../../../../users/domain/value-objects/user-role';
 import { CreateTicket } from '../../../application/use-cases/create-ticket.use-case';
 import { FindTicketByFolio } from '../../../application/use-cases/find-ticket-by-folio.use-case';
 import { FindTicketById } from '../../../application/use-cases/find-ticket-by-id.use-case';
+import { GetBillingByGame } from '../../../application/use-cases/get-billing-by-game.use-case';
 import { GetBranchTotals } from '../../../application/use-cases/get-branch-totals.use-case';
 import { GetSellerReport } from '../../../application/use-cases/get-seller-report.use-case';
 import { GetTicketsByDraw } from '../../../application/use-cases/get-tickets-by-draw.use-case';
 import { GetTicketsSummary } from '../../../application/use-cases/get-tickets-summary.use-case';
 import { ListTickets } from '../../../application/use-cases/list-tickets.use-case';
 import type { ListTicketsOutput } from '../../../application/use-cases/list-tickets.use-case';
+import type { BillingByGameOutput } from '../../../application/dtos/billing-by-game.output';
 import type { BranchTotalsOutput } from '../../../application/dtos/branch-totals.output';
 import type { SellerReportOutput } from '../../../application/dtos/seller-report.output';
 import type { TicketsByDrawOutput } from '../../../application/dtos/tickets-by-draw.output';
@@ -40,6 +42,7 @@ import {
   type EvaluateTicketByIdOutput,
 } from '../../../application/use-cases/evaluate-ticket-by-id.use-case';
 import { MarkTicketPaid } from '../../../application/use-cases/mark-ticket-paid.use-case';
+import { BillingByGameQueryDto } from '../dtos/billing-by-game-query.dto';
 import { BranchTotalsQueryDto } from '../dtos/branch-totals-query.dto';
 import { ListWinnersQueryDto } from '../dtos/list-winners-query.dto';
 import { SellerReportQueryDto } from '../dtos/seller-report-query.dto';
@@ -60,6 +63,7 @@ export class TicketsController {
     private readonly markTicketPaid: MarkTicketPaid,
     private readonly getSellerReport: GetSellerReport,
     private readonly getBranchTotals: GetBranchTotals,
+    private readonly getBillingByGame: GetBillingByGame,
   ) {}
 
   @Post()
@@ -107,6 +111,22 @@ export class TicketsController {
       requesterRole: user.role,
       salePointId: query.salePointId,
       gameId: query.gameId,
+      sellerId: query.sellerId,
+      from: query.from ? new Date(query.from) : undefined,
+      to: query.to ? new Date(query.to) : undefined,
+    });
+  }
+
+  @Get('billing-by-game')
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  billingByGame(
+    @CurrentUser() user: RequestUser,
+    @Query() query: BillingByGameQueryDto,
+  ): Promise<BillingByGameOutput> {
+    return this.getBillingByGame.execute({
+      requesterId: user.id,
+      requesterRole: user.role,
+      salePointId: query.salePointId,
       sellerId: query.sellerId,
       from: query.from ? new Date(query.from) : undefined,
       to: query.to ? new Date(query.to) : undefined,
