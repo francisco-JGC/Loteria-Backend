@@ -89,6 +89,7 @@ export class TicketOrmEntity {
   })
   lines!: TicketLineOrmEntity[];
 
+  @Index()
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
