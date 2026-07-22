@@ -23,8 +23,8 @@ export interface UpsertSalePointGamePrizeInput {
   requesterRole: UserRole;
   salePointId: string;
   gameId: string;
-  mainMultiplier: number | null;
-  secondaryMultiplier: number | null;
+  exactMultiplier: number | null;
+  easyMultiplier: number | null;
 }
 
 export interface UpsertSalePointGamePrizeOutput {
@@ -81,7 +81,7 @@ export class UpsertSalePointGamePrize
     );
 
     // Both cleared → delete the override row (revert to game defaults).
-    if (input.mainMultiplier === null && input.secondaryMultiplier === null) {
+    if (input.exactMultiplier === null && input.easyMultiplier === null) {
       if (existing) {
         await this.prizes.delete(existing.id);
         return { id: null, deleted: true };
@@ -91,8 +91,8 @@ export class UpsertSalePointGamePrize
 
     if (existing) {
       existing.updateMultipliers(
-        input.mainMultiplier,
-        input.secondaryMultiplier,
+        input.exactMultiplier,
+        input.easyMultiplier,
       );
       await this.prizes.save(existing);
       return { id: existing.id, deleted: false };
@@ -101,8 +101,8 @@ export class UpsertSalePointGamePrize
     const created = SalePointGamePrize.create({
       salePointId: input.salePointId,
       gameId: input.gameId,
-      mainMultiplier: input.mainMultiplier,
-      secondaryMultiplier: input.secondaryMultiplier,
+      exactMultiplier: input.exactMultiplier,
+      easyMultiplier: input.easyMultiplier,
     });
     await this.prizes.save(created);
     return { id: created.id, deleted: false };

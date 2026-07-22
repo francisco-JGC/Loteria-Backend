@@ -87,24 +87,24 @@ export class ListEffectiveGamePrizes
     const overrideByGameId = new Map(overrides.map((o) => [o.gameId, o]));
 
     const items: EffectiveGamePrizeOutput[] = allGames.map((game) => {
-        const override = overrideByGameId.get(game.id) ?? null;
-        const mainDefault = game.mainMultiplier;
-        const secondaryDefault = game.secondaryMultiplier;
-        const overrideMain = override?.mainMultiplier ?? null;
-        const overrideSecondary = override?.secondaryMultiplier ?? null;
-        return {
-          gameId: game.id,
-          gameName: game.name,
-          mainDefault,
-          secondaryDefault,
-          mainMultiplier: overrideMain ?? mainDefault,
-          secondaryMultiplier: overrideSecondary ?? secondaryDefault,
-          overrideId: override?.id ?? null,
-          overrideMain,
-          overrideSecondary,
-          hasOverride: override !== null,
-        };
-      });
+      const override = overrideByGameId.get(game.id) ?? null;
+      const exactDefault = game.exactMultiplier;
+      const easyDefault = game.easyMultiplier;
+      const overrideExact = override?.exactMultiplier ?? null;
+      const overrideEasy = override?.easyMultiplier ?? null;
+      return {
+        gameId: game.id,
+        gameName: game.name,
+        exactDefault,
+        easyDefault,
+        exactMultiplier: overrideExact ?? exactDefault,
+        easyMultiplier: overrideEasy ?? easyDefault,
+        overrideId: override?.id ?? null,
+        overrideExact,
+        overrideEasy,
+        hasOverride: override !== null,
+      };
+    });
 
     return { items };
   }

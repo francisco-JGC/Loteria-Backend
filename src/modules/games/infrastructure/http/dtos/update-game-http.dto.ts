@@ -17,13 +17,13 @@ export class UpdateGameHttpDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  mainMultiplier?: number | null;
+  exactMultiplier?: number | null;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  secondaryMultiplier?: number | null;
+  easyMultiplier?: number | null;
 
   @IsOptional()
   @IsString()

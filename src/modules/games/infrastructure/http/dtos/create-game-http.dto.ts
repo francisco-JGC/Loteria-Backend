@@ -35,13 +35,13 @@ export class CreateGameHttpDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  mainMultiplier: number | null = null;
+  exactMultiplier: number | null = null;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  secondaryMultiplier: number | null = null;
+  easyMultiplier: number | null = null;
 
   @IsOptional()
   @IsString()

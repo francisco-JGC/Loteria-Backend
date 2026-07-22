@@ -6,10 +6,10 @@ import { ValidationError } from '../../../../shared/domain/errors/domain.error';
 export interface SalePointGamePrizeProps {
   salePointId: string;
   gameId: string;
-  /** Overrides `games.main_multiplier`. Null = inherit game default. */
-  mainMultiplier: number | null;
-  /** Overrides `games.secondary_multiplier`. Null = inherit game default. */
-  secondaryMultiplier: number | null;
+  /** Overrides `games.exact_multiplier`. Null = inherit game default. */
+  exactMultiplier: number | null;
+  /** Overrides `games.easy_multiplier`. Null = inherit game default. */
+  easyMultiplier: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,20 +27,17 @@ export class SalePointGamePrize extends AggregateRoot<SalePointGamePrizeProps> {
   static create(input: {
     salePointId: string;
     gameId: string;
-    mainMultiplier: number | null;
-    secondaryMultiplier: number | null;
+    exactMultiplier: number | null;
+    easyMultiplier: number | null;
   }): SalePointGamePrize {
-    SalePointGamePrize.assertMultiplier(input.mainMultiplier, 'main');
-    SalePointGamePrize.assertMultiplier(
-      input.secondaryMultiplier,
-      'secondary',
-    );
+    SalePointGamePrize.assertMultiplier(input.exactMultiplier, 'exact');
+    SalePointGamePrize.assertMultiplier(input.easyMultiplier, 'easy');
     const now = new Date();
     return new SalePointGamePrize(randomUUID(), {
       salePointId: input.salePointId,
       gameId: input.gameId,
-      mainMultiplier: input.mainMultiplier,
-      secondaryMultiplier: input.secondaryMultiplier,
+      exactMultiplier: input.exactMultiplier,
+      easyMultiplier: input.easyMultiplier,
       createdAt: now,
       updatedAt: now,
     });
@@ -51,19 +48,19 @@ export class SalePointGamePrize extends AggregateRoot<SalePointGamePrizeProps> {
   }
 
   updateMultipliers(
-    mainMultiplier: number | null,
-    secondaryMultiplier: number | null,
+    exactMultiplier: number | null,
+    easyMultiplier: number | null,
   ): void {
-    SalePointGamePrize.assertMultiplier(mainMultiplier, 'main');
-    SalePointGamePrize.assertMultiplier(secondaryMultiplier, 'secondary');
-    this.props.mainMultiplier = mainMultiplier;
-    this.props.secondaryMultiplier = secondaryMultiplier;
+    SalePointGamePrize.assertMultiplier(exactMultiplier, 'exact');
+    SalePointGamePrize.assertMultiplier(easyMultiplier, 'easy');
+    this.props.exactMultiplier = exactMultiplier;
+    this.props.easyMultiplier = easyMultiplier;
     this.props.updatedAt = new Date();
   }
 
   /** True when both overrides are cleared — caller should delete the row. */
   get isEmpty(): boolean {
-    return this.mainMultiplier === null && this.secondaryMultiplier === null;
+    return this.exactMultiplier === null && this.easyMultiplier === null;
   }
 
   get salePointId(): string {
@@ -74,12 +71,12 @@ export class SalePointGamePrize extends AggregateRoot<SalePointGamePrizeProps> {
     return this.props.gameId;
   }
 
-  get mainMultiplier(): number | null {
-    return this.props.mainMultiplier;
+  get exactMultiplier(): number | null {
+    return this.props.exactMultiplier;
   }
 
-  get secondaryMultiplier(): number | null {
-    return this.props.secondaryMultiplier;
+  get easyMultiplier(): number | null {
+    return this.props.easyMultiplier;
   }
 
   get createdAt(): Date {
@@ -92,7 +89,7 @@ export class SalePointGamePrize extends AggregateRoot<SalePointGamePrizeProps> {
 
   private static assertMultiplier(
     value: number | null,
-    label: 'main' | 'secondary',
+    label: 'exact' | 'easy',
   ): void {
     if (value === null) return;
     if (!Number.isInteger(value) || value < 0) {

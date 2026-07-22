@@ -1,8 +1,8 @@
 export interface UpdateGameApplicationInput {
   id: string;
   name?: string;
-  mainMultiplier?: number | null;
-  secondaryMultiplier?: number | null;
+  exactMultiplier?: number | null;
+  easyMultiplier?: number | null;
   imagePath?: string | null;
   orderIndex?: number;
 }

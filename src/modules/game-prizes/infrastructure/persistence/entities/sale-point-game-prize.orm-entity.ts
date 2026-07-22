@@ -37,11 +37,11 @@ export class SalePointGamePrizeOrmEntity {
   @JoinColumn({ name: 'game_id' })
   game?: GameOrmEntity;
 
-  @Column({ type: 'integer', name: 'main_multiplier', nullable: true })
-  mainMultiplier!: number | null;
+  @Column({ type: 'integer', name: 'exact_multiplier', nullable: true })
+  exactMultiplier!: number | null;
 
-  @Column({ type: 'integer', name: 'secondary_multiplier', nullable: true })
-  secondaryMultiplier!: number | null;
+  @Column({ type: 'integer', name: 'easy_multiplier', nullable: true })
+  easyMultiplier!: number | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

@@ -24,11 +24,11 @@ export class GameOrmEntity {
   @Column({ type: 'varchar', length: 20 })
   type!: GameType;
 
-  @Column({ type: 'integer', name: 'main_multiplier', nullable: true })
-  mainMultiplier!: number | null;
+  @Column({ type: 'integer', name: 'exact_multiplier', nullable: true })
+  exactMultiplier!: number | null;
 
-  @Column({ type: 'integer', name: 'secondary_multiplier', nullable: true })
-  secondaryMultiplier!: number | null;
+  @Column({ type: 'integer', name: 'easy_multiplier', nullable: true })
+  easyMultiplier!: number | null;
 
   @Column({ type: 'varchar', name: 'image_path', length: 255, nullable: true })
   imagePath!: string | null;

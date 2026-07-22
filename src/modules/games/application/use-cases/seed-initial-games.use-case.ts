@@ -11,24 +11,24 @@ interface InitialGame {
   slug: string;
   name: string;
   type: GameType;
-  mainMultiplier: number | null;
-  secondaryMultiplier: number | null;
+  exactMultiplier: number | null;
+  easyMultiplier: number | null;
 }
 
 const INITIAL_GAMES: readonly InitialGame[] = [
-  { slug: 'diaria', name: 'Diaria', type: GameType.REGULAR, mainMultiplier: 80, secondaryMultiplier: null },
-  { slug: 'juega3', name: 'Juega 3', type: GameType.THREE_DIGIT, mainMultiplier: 600, secondaryMultiplier: 100 },
-  { slug: 'fechas', name: 'Fechas', type: GameType.DATE, mainMultiplier: 200, secondaryMultiplier: null },
-  { slug: 'combo', name: 'Combo', type: GameType.FOUR_DIGIT, mainMultiplier: 4000, secondaryMultiplier: null },
-  { slug: 'terminacion2', name: 'Terminación 2', type: GameType.REGULAR, mainMultiplier: 80, secondaryMultiplier: null },
-  { slug: 'tica', name: 'Tica', type: GameType.REGULAR, mainMultiplier: 80, secondaryMultiplier: null },
-  { slug: 'tresmonazo', name: 'Tresmonazo', type: GameType.THREE_DIGIT, mainMultiplier: 600, secondaryMultiplier: 100 },
-  { slug: 'hondurena', name: 'Hondureña', type: GameType.REGULAR, mainMultiplier: 80, secondaryMultiplier: null },
-  { slug: 'gana3', name: 'Gana 3', type: GameType.THREE_DIGIT, mainMultiplier: 600, secondaryMultiplier: 100 },
-  { slug: 'primera', name: 'Primera', type: GameType.REGULAR, mainMultiplier: 80, secondaryMultiplier: null },
-  { slug: 'salvadorena', name: 'Salvadoreña', type: GameType.REGULAR, mainMultiplier: 80, secondaryMultiplier: null },
-  { slug: 'rifas', name: 'Rifas', type: GameType.REGULAR, mainMultiplier: 80, secondaryMultiplier: null },
-  { slug: 'multisorteo', name: 'Multi Sorteo', type: GameType.MULTI_SORTEO, mainMultiplier: null, secondaryMultiplier: null },
+  { slug: 'diaria', name: 'Diaria', type: GameType.REGULAR, exactMultiplier: 80, easyMultiplier: null },
+  { slug: 'juega3', name: 'Juega 3', type: GameType.THREE_DIGIT, exactMultiplier: 600, easyMultiplier: 100 },
+  { slug: 'fechas', name: 'Fechas', type: GameType.DATE, exactMultiplier: 200, easyMultiplier: null },
+  { slug: 'combo', name: 'Combo', type: GameType.FOUR_DIGIT, exactMultiplier: 4000, easyMultiplier: null },
+  { slug: 'terminacion2', name: 'Terminación 2', type: GameType.REGULAR, exactMultiplier: 80, easyMultiplier: null },
+  { slug: 'tica', name: 'Tica', type: GameType.REGULAR, exactMultiplier: 80, easyMultiplier: null },
+  { slug: 'tresmonazo', name: 'Tresmonazo', type: GameType.THREE_DIGIT, exactMultiplier: 600, easyMultiplier: 100 },
+  { slug: 'hondurena', name: 'Hondureña', type: GameType.REGULAR, exactMultiplier: 80, easyMultiplier: null },
+  { slug: 'gana3', name: 'Gana 3', type: GameType.THREE_DIGIT, exactMultiplier: 600, easyMultiplier: 100 },
+  { slug: 'primera', name: 'Primera', type: GameType.REGULAR, exactMultiplier: 80, easyMultiplier: null },
+  { slug: 'salvadorena', name: 'Salvadoreña', type: GameType.REGULAR, exactMultiplier: 80, easyMultiplier: null },
+  { slug: 'rifas', name: 'Rifas', type: GameType.REGULAR, exactMultiplier: 80, easyMultiplier: null },
+  { slug: 'multisorteo', name: 'Multi Sorteo', type: GameType.MULTI_SORTEO, exactMultiplier: null, easyMultiplier: null },
 ];
 
 @Injectable()
@@ -49,8 +49,8 @@ export class SeedInitialGames {
         slug: template.slug,
         name: template.name,
         type: template.type,
-        mainMultiplier: template.mainMultiplier,
-        secondaryMultiplier: template.secondaryMultiplier,
+        exactMultiplier: template.exactMultiplier,
+        easyMultiplier: template.easyMultiplier,
         imagePath: `assets/images/games/${template.slug}.jpeg`,
         orderIndex: i + 1,
       });

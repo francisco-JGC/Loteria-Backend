@@ -6,8 +6,8 @@ export interface GameOutput {
   slug: string;
   name: string;
   type: GameType;
-  mainMultiplier: number | null;
-  secondaryMultiplier: number | null;
+  exactMultiplier: number | null;
+  easyMultiplier: number | null;
   imagePath: string | null;
   orderIndex: number;
   isActive: boolean;
@@ -20,8 +20,8 @@ export const toGameOutput = (game: Game): GameOutput => ({
   slug: game.slug,
   name: game.name,
   type: game.type,
-  mainMultiplier: game.mainMultiplier,
-  secondaryMultiplier: game.secondaryMultiplier,
+  exactMultiplier: game.exactMultiplier,
+  easyMultiplier: game.easyMultiplier,
   imagePath: game.imagePath,
   orderIndex: game.orderIndex,
   isActive: game.isActive,

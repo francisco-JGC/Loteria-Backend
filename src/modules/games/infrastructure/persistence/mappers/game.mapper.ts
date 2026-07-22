@@ -7,8 +7,8 @@ export class GameMapper {
       slug: orm.slug,
       name: orm.name,
       type: orm.type,
-      mainMultiplier: orm.mainMultiplier,
-      secondaryMultiplier: orm.secondaryMultiplier,
+      exactMultiplier: orm.exactMultiplier,
+      easyMultiplier: orm.easyMultiplier,
       imagePath: orm.imagePath,
       orderIndex: orm.orderIndex,
       isActive: orm.isActive,
@@ -23,8 +23,8 @@ export class GameMapper {
     entity.slug = game.slug;
     entity.name = game.name;
     entity.type = game.type;
-    entity.mainMultiplier = game.mainMultiplier;
-    entity.secondaryMultiplier = game.secondaryMultiplier;
+    entity.exactMultiplier = game.exactMultiplier;
+    entity.easyMultiplier = game.easyMultiplier;
     entity.imagePath = game.imagePath;
     entity.orderIndex = game.orderIndex;
     entity.isActive = game.isActive;

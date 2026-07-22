@@ -39,8 +39,8 @@ export class GamesController {
       slug: dto.slug,
       name: dto.name,
       type: dto.type,
-      mainMultiplier: dto.mainMultiplier,
-      secondaryMultiplier: dto.secondaryMultiplier,
+      exactMultiplier: dto.exactMultiplier,
+      easyMultiplier: dto.easyMultiplier,
       imagePath: dto.imagePath,
       orderIndex: dto.orderIndex,
     });
@@ -65,8 +65,8 @@ export class GamesController {
     return this.updateGame.execute({
       id,
       name: dto.name,
-      mainMultiplier: dto.mainMultiplier,
-      secondaryMultiplier: dto.secondaryMultiplier,
+      exactMultiplier: dto.exactMultiplier,
+      easyMultiplier: dto.easyMultiplier,
       imagePath: dto.imagePath,
       orderIndex: dto.orderIndex,
     });

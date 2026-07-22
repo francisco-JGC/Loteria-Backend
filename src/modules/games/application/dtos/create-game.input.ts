@@ -4,8 +4,8 @@ export interface CreateGameApplicationInput {
   slug: string;
   name: string;
   type: GameType;
-  mainMultiplier: number | null;
-  secondaryMultiplier: number | null;
+  exactMultiplier: number | null;
+  easyMultiplier: number | null;
   imagePath: string | null;
   orderIndex: number;
 }

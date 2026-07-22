@@ -8,8 +8,8 @@ export interface GameProps {
   slug: string;
   name: string;
   type: GameType;
-  mainMultiplier: number | null;
-  secondaryMultiplier: number | null;
+  exactMultiplier: number | null;
+  easyMultiplier: number | null;
   imagePath: string | null;
   orderIndex: number;
   isActive: boolean;
@@ -21,16 +21,16 @@ export interface CreateGameInput {
   slug: string;
   name: string;
   type: GameType;
-  mainMultiplier: number | null;
-  secondaryMultiplier: number | null;
+  exactMultiplier: number | null;
+  easyMultiplier: number | null;
   imagePath: string | null;
   orderIndex: number;
 }
 
 export interface UpdateGameInput {
   name?: string;
-  mainMultiplier?: number | null;
-  secondaryMultiplier?: number | null;
+  exactMultiplier?: number | null;
+  easyMultiplier?: number | null;
   imagePath?: string | null;
   orderIndex?: number;
 }
@@ -43,16 +43,16 @@ export class Game extends AggregateRoot<GameProps> {
   static create(input: CreateGameInput): Game {
     Game.assertMultipliersMatchType(
       input.type,
-      input.mainMultiplier,
-      input.secondaryMultiplier,
+      input.exactMultiplier,
+      input.easyMultiplier,
     );
     const now = new Date();
     return new Game(randomUUID(), {
       slug: input.slug,
       name: input.name,
       type: input.type,
-      mainMultiplier: input.mainMultiplier,
-      secondaryMultiplier: input.secondaryMultiplier,
+      exactMultiplier: input.exactMultiplier,
+      easyMultiplier: input.easyMultiplier,
       imagePath: input.imagePath,
       orderIndex: input.orderIndex,
       isActive: true,
@@ -77,12 +77,12 @@ export class Game extends AggregateRoot<GameProps> {
     return this.props.type;
   }
 
-  get mainMultiplier(): number | null {
-    return this.props.mainMultiplier;
+  get exactMultiplier(): number | null {
+    return this.props.exactMultiplier;
   }
 
-  get secondaryMultiplier(): number | null {
-    return this.props.secondaryMultiplier;
+  get easyMultiplier(): number | null {
+    return this.props.easyMultiplier;
   }
 
   get imagePath(): string | null {
@@ -106,17 +106,17 @@ export class Game extends AggregateRoot<GameProps> {
   }
 
   update(input: UpdateGameInput): void {
-    const nextMain = input.mainMultiplier ?? this.props.mainMultiplier;
+    const nextMain = input.exactMultiplier ?? this.props.exactMultiplier;
     const nextSecondary =
-      input.secondaryMultiplier ?? this.props.secondaryMultiplier;
+      input.easyMultiplier ?? this.props.easyMultiplier;
 
     Game.assertMultipliersMatchType(this.props.type, nextMain, nextSecondary);
 
     if (input.name !== undefined) this.props.name = input.name;
     if (input.imagePath !== undefined) this.props.imagePath = input.imagePath;
     if (input.orderIndex !== undefined) this.props.orderIndex = input.orderIndex;
-    this.props.mainMultiplier = nextMain;
-    this.props.secondaryMultiplier = nextSecondary;
+    this.props.exactMultiplier = nextMain;
+    this.props.easyMultiplier = nextSecondary;
     this.props.updatedAt = new Date();
   }
 
@@ -140,22 +140,22 @@ export class Game extends AggregateRoot<GameProps> {
 
     if (requiresMain && (main === null || main <= 0)) {
       throw new ValidationError(
-        `Game type "${type}" requires a positive mainMultiplier`,
+        `Game type "${type}" requires a positive exactMultiplier`,
       );
     }
     if (!requiresMain && main !== null) {
       throw new ValidationError(
-        `Game type "${type}" must not define a mainMultiplier`,
+        `Game type "${type}" must not define a exactMultiplier`,
       );
     }
     if (requiresSecondary && (secondary === null || secondary <= 0)) {
       throw new ValidationError(
-        `Game type "${type}" requires a positive secondaryMultiplier`,
+        `Game type "${type}" requires a positive easyMultiplier`,
       );
     }
     if (!requiresSecondary && secondary !== null) {
       throw new ValidationError(
-        `Game type "${type}" must not define a secondaryMultiplier`,
+        `Game type "${type}" must not define a easyMultiplier`,
       );
     }
   }

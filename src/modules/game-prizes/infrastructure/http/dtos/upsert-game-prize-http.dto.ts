@@ -19,12 +19,12 @@ export class UpsertGamePrizeHttpDto {
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  mainMultiplier: number | null = null;
+  exactMultiplier: number | null = null;
 
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  secondaryMultiplier: number | null = null;
+  easyMultiplier: number | null = null;
 }

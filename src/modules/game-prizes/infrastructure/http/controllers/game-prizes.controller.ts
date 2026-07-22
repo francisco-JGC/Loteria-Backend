@@ -46,8 +46,8 @@ export class GamePrizesController {
       requesterRole: user.role,
       salePointId: dto.salePointId,
       gameId: dto.gameId,
-      mainMultiplier: dto.mainMultiplier,
-      secondaryMultiplier: dto.secondaryMultiplier,
+      exactMultiplier: dto.exactMultiplier,
+      easyMultiplier: dto.easyMultiplier,
     });
   }
 }

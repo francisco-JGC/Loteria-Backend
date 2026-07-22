@@ -6,8 +6,8 @@ export class SalePointGamePrizeMapper {
     return SalePointGamePrize.restore(orm.id, {
       salePointId: orm.salePointId,
       gameId: orm.gameId,
-      mainMultiplier: orm.mainMultiplier ?? null,
-      secondaryMultiplier: orm.secondaryMultiplier ?? null,
+      exactMultiplier: orm.exactMultiplier ?? null,
+      easyMultiplier: orm.easyMultiplier ?? null,
       createdAt: orm.createdAt,
       updatedAt: orm.updatedAt,
     });
@@ -18,8 +18,8 @@ export class SalePointGamePrizeMapper {
     entity.id = prize.id;
     entity.salePointId = prize.salePointId;
     entity.gameId = prize.gameId;
-    entity.mainMultiplier = prize.mainMultiplier;
-    entity.secondaryMultiplier = prize.secondaryMultiplier;
+    entity.exactMultiplier = prize.exactMultiplier;
+    entity.easyMultiplier = prize.easyMultiplier;
     entity.createdAt = prize.createdAt;
     entity.updatedAt = prize.updatedAt;
     return entity;
