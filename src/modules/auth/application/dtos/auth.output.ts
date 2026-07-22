@@ -9,5 +9,11 @@ export interface AuthenticatedUserDto {
 
 export interface AuthOutput {
   accessToken: string;
+  refreshToken: string;
   user: AuthenticatedUserDto;
+}
+
+/** Response for `POST /auth/refresh`. */
+export interface RefreshOutput {
+  accessToken: string;
 }

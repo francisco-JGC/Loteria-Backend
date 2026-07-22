@@ -40,14 +40,18 @@ export class Login implements UseCase<LoginInput, AuthOutput> {
       );
     }
 
-    const accessToken = await this.tokens.sign({
-      sub: user.id,
-      username: user.username,
-      role: user.role,
-    });
+    const [accessToken, refreshToken] = await Promise.all([
+      this.tokens.sign({
+        sub: user.id,
+        username: user.username,
+        role: user.role,
+      }),
+      this.tokens.signRefresh(user.id),
+    ]);
 
     return {
       accessToken,
+      refreshToken,
       user: {
         id: user.id,
         username: user.username,

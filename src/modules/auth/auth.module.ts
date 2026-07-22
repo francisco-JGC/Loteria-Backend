@@ -8,6 +8,7 @@ import { type AppConfig } from '../../shared/infrastructure/config/env.config';
 import { UsersModule } from '../users/users.module';
 import { TOKEN_SERVICE } from './application/ports/token-service.port';
 import { Login } from './application/use-cases/login.use-case';
+import { RefreshAccessToken } from './application/use-cases/refresh-access-token.use-case';
 import { AuthController } from './infrastructure/http/controllers/auth.controller';
 import { JwtAuthGuard } from './infrastructure/http/guards/jwt-auth.guard';
 import { RolesGuard } from './infrastructure/http/guards/roles.guard';
@@ -33,6 +34,7 @@ import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
   controllers: [AuthController],
   providers: [
     Login,
+    RefreshAccessToken,
     JwtStrategy,
     { provide: TOKEN_SERVICE, useClass: JwtTokenService },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
