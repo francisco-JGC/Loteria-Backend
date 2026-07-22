@@ -6,6 +6,7 @@ import {
   GAMES_REPOSITORY,
   type GamesRepository,
 } from '../../../games/domain/repositories/games.repository';
+import { GameType } from '../../../games/domain/value-objects/game-type';
 import { PartnerScopeService } from '../../../sale-points/application/services/partner-scope.service';
 import {
   SALE_POINTS_REPOSITORY,
@@ -84,9 +85,16 @@ export class ListEffectiveGamePrizes
       this.prizes.findBySalePoint(input.salePointId),
     ]);
 
+    // Multi-sorteo is a container that creates tickets in its sub-games —
+    // it has no multipliers of its own. Sub-games hold the real rules, so
+    // configuring prizes on it is meaningless. Filter it out.
+    const configurableGames = allGames.filter(
+      (g) => g.type !== GameType.MULTI_SORTEO,
+    );
+
     const overrideByGameId = new Map(overrides.map((o) => [o.gameId, o]));
 
-    const items: EffectiveGamePrizeOutput[] = allGames.map((game) => {
+    const items: EffectiveGamePrizeOutput[] = configurableGames.map((game) => {
       const override = overrideByGameId.get(game.id) ?? null;
       const exactDefault = game.exactMultiplier;
       const easyDefault = game.easyMultiplier;
