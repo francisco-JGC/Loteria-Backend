@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { GamePrizesModule } from './modules/game-prizes/game-prizes.module';
 import { GamesModule } from './modules/games/games.module';
 import { LuckyModule } from './modules/lucky/lucky.module';
 import { MovementsModule } from './modules/movements/movements.module';
@@ -35,6 +36,7 @@ import { DatabaseModule } from './shared/infrastructure/persistence/database.mod
     DashboardModule,
     MovementsModule,
     SaleLimitsModule,
+    GamePrizesModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: DomainExceptionFilter }],
 })
