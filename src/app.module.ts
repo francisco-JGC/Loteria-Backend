@@ -15,6 +15,7 @@ import { TicketsModule } from './modules/tickets/tickets.module';
 import { UsersModule } from './modules/users/users.module';
 import { envLoader, envSchema } from './shared/infrastructure/config/env.config';
 import { DomainExceptionFilter } from './shared/infrastructure/http/domain-exception.filter';
+import { HealthController } from './shared/infrastructure/http/health.controller';
 import { DatabaseModule } from './shared/infrastructure/persistence/database.module';
 
 @Module({
@@ -38,6 +39,7 @@ import { DatabaseModule } from './shared/infrastructure/persistence/database.mod
     SaleLimitsModule,
     GamePrizesModule,
   ],
+  controllers: [HealthController],
   providers: [{ provide: APP_FILTER, useClass: DomainExceptionFilter }],
 })
 export class AppModule {}
